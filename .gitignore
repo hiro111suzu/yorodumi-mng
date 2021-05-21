@@ -1,0 +1,10 @@
+compiler-latest/
+fit_robot/
+gomibako/
+omo-souko/
+souko/
+temp/
+gomibako/
+.emanlog
+*.png
+*.Rout

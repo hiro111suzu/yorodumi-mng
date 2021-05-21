@@ -27,6 +27,7 @@ define( 'JOBLIST', [
 	'Tue' => [
 		'07' => 'unp-5-get_xml 1000' ,
 		'12' => 'mng sas' ,
+		'18' => 'mng empiar' ,
 	] ,
 
 	'Wed' => [

@@ -83,22 +83,16 @@ _comp_save( FN_DBDATA_EMDB, array_filter( $data ) );
 
 //.. pdb
 _count();
+//... uniprot
 _line( 'pdb-unp' );
+$data = [];
 foreach ( PDBID2UNPID as $pdbid => $unp_ids ) {
 	if ( _count( 'pdb', NUM_STOP ) ) break;
 	$data[ $pdbid ] = _get_unp_data( $unp_ids );
 }
 _count();
-//- ほかの配列データベースも入れる
-foreach ( _idloop( 'qinfo' ) as $fn ) {
-	if ( _count( 'pdb', NUM_STOP ) ) break;
-	$pdb_id = _fn2id( $fn );
-	foreach ( (array)_json_load2( $fn )->ref as $a ) {
-		$data[ $pdb_id ][] = _set( $a[0], $a[1] );
-	}
-	_unq_ids( $data[ $pdbid ] );
-}
-_count();
+
+//... plus
 //- plusからPfam情報
 foreach ( _idloop( 'pdb_plus' ) as $fn ) {
 	if ( _count( 'pdb', NUM_STOP ) ) break;
@@ -107,13 +101,14 @@ foreach ( _idloop( 'pdb_plus' ) as $fn ) {
 		if ( $c->db_name != 'Pfam' ) continue;
 		$data[ $pdb_id ][] = _set( 'pf', $c->pdbx_db_accession );
 	}
-	_unq_ids( $data[ $pdbid ] );
 }
-
-//- cath
 _count();
+
+//... cath
+//- cath
 _line( 'CATH' );
 foreach ( _json_load2( FN_PDB2CATH ) as $pdb_id => $cath_id_set ) {
+	if ( _count( 'pdb', NUM_STOP ) ) break;
 	$out = $cath_id_set;
 	foreach ( $cath_id_set as $cath_id ) {
 		list( $c1, $c2, $c3, $c4 ) = explode( '.', $cath_id );
@@ -124,7 +119,44 @@ foreach ( _json_load2( FN_PDB2CATH ) as $pdb_id => $cath_id_set ) {
 	foreach ( array_unique( $out ) as $i )
 		$data[ $pdb_id ][] = "ct:$i";
 }
+_count();
 
+//... qinfo
+//- 化合物無視リスト
+$tsv = _tsv_load2( DN_EDIT. '/chem_annot.tsv' );
+$chem_ignroe = [];
+foreach ( $tsv['dbid_ignore'] as $key => $dummy ) {
+	$chem_ignroe[ $key ] = true;
+}
+foreach ( $tsv['class'] as $key => $val ) {
+	if ( in_array( $val, [ 'buf', 'det', 'pre' ] ) ) {
+		$chem_ignroe[ $key ] = true;
+	}
+}
+_m( count( $chem_ignroe ). '個のchem無視リスト読み込み' );
+
+//- ほかの配列データベースも入れる
+foreach ( _idloop( 'qinfo' ) as $fn ) {
+	if ( _count( 'pdb', NUM_STOP ) ) break;
+	$pdb_id = _fn2id( $fn );
+	$json = _json_load2( $fn );
+	//- ref
+	foreach ( (array)$json->ref as $a ) {
+		if ( $a[0] == 'polysac' ) continue; //- polysac やめてみる
+		$data[ $pdb_id ][] = _set( $a[0], $a[1] );
+	}
+	foreach ( (array)$json->chemid as $i ) {
+		if ( $chem_ignroe[ $i ] ) continue;
+		$data[ $pdb_id ][] = _set( 'chem', $i );
+	}
+	foreach ( (array)$json->poly_type as $i ) {
+		$data[ $pdb_id ][] = _set( 'poly', $i );
+	}
+	_unq_ids( $data[ $pdbid ] );
+}
+_count();
+
+//... end
 _m( count( $data ) );
 _comp_save( FN_DBDATA_PDB, array_filter( $data ) );
 

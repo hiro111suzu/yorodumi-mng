@@ -40,40 +40,40 @@ foreach( _idlist( 'emdb' ) as $id ) {
 	_m( "$id - 処理開始", 1 );
 
 //.. 情報あつめ
-	$json = _json_load( $fn_mapinfo );
-//	$is_byte = ( $json[ 'MODE' ] == 0 ); //- バイトデータ？
+	$mapinfo = _json_load( $fn_mapinfo );
+//	$is_byte = ( $mapinfo[ 'MODE' ] == 0 ); //- バイトデータ？
 //	$imfn = 'tempmap.mrc'; //- 変換の中間マップ
 
 //.. 情報
 	//- サイズ
-	$nmax = max( [ $json[ 'NC' ], $json[ 'NR' ], $json[ 'NS' ] ] );
+	$nmax = max( [ $mapinfo[ 'NC' ], $mapinfo[ 'NR' ], $mapinfo[ 'NS' ] ] );
 
-	$j = _json_load( $fn_movinfo );
+	$movinfo = _json_load( $fn_movinfo );
 	
 	//- 生トモグラム（ソリッド表示）ならやらない
-	if ( $j[1][ 'mode' ] == 'solid' ) {
+	if ( $movinfo[1][ 'mode' ] == 'solid' ) {
 		_m( "$id: 生トモグラム" );
 		_del( $fn_outmap );
 		continue;
 	}
 
 	//- セッションファイルから
-	$x = round( $j[1][ 'apix x' ], 3 );
-	$y = round( $j[1][ 'apix y' ], 3 );
-	$z = round( $j[1][ 'apix z' ], 3 );
+	$x = round( $movinfo[1][ 'apix x' ], 3 );
+	$y = round( $movinfo[1][ 'apix y' ], 3 );
+	$z = round( $movinfo[1][ 'apix z' ], 3 );
 	_m( "movinfo: $x, $y, $z" );
 
 	if ( $x * $y * $z == 0 ) {
-		$x = $json[ 'APIX X' ];
-		$y = $json[ 'APIX Y' ];
-		$z = $json[ 'APIX Z' ];
+		$x = $mapinfo[ 'APIX X' ];
+		$y = $mapinfo[ 'APIX Y' ];
+		$z = $mapinfo[ 'APIX Z' ];
 	}
 
 	_m( "use: $x, $y, $z" );
 
 	if ( $x * $y * $z == 0 ) {
 		_m( "$id: apix値が異常", -1 );
-		if ( $json[ 'APIX X' ] == 'ERROR' )
+		if ( $mapinfo[ 'APIX X' ] == 'ERROR' )
 			_del( $fn_mapinfo );
 		continue;
 	}
@@ -84,9 +84,9 @@ foreach( _idlist( 'emdb' ) as $id ) {
 	_m( "y/z = $yz" );
 
 	//- 立法格子じゃない？
-	if (   (integer)$json[ 'Alpha' ] != 90 
-		|| (integer)$json[ 'Beta' ]  != 90
-		|| (integer)$json[ 'Gamma' ] != 90
+	if (   (integer)$mapinfo[ 'Alpha' ] != 90 
+		|| (integer)$mapinfo[ 'Beta' ]  != 90
+		|| (integer)$mapinfo[ 'Gamma' ] != 90
 		|| $xy < 0.99 || 1.01 < $xy
 		|| $yz < 0.99 || 1.01 < $yz
 	) {
@@ -99,7 +99,7 @@ foreach( _idlist( 'emdb' ) as $id ) {
 	if ( _proc( "make-situs-map-$id" ) ) continue;
 
 	//- apix
-	$apix = $j[1][ 'apix x' ] ?: $json[ 'APIX X' ];
+	$apix = $movinfo[1][ 'apix x' ] ?: $mapinfo[ 'APIX X' ];
 	if ( $apix == '' )
 		$apix = _json_load2([ 'emdb', $id ])->map->pixelSpacing->pixelX;
 
@@ -121,8 +121,8 @@ foreach( _idlist( 'emdb' ) as $id ) {
 	}
 
 	//- フォーマット問題：integerのマップとか
-	if ( $json[ 'MODE' ] != 0 and $json[ 'MODE' ] != 2 ) {
-		_m( "ファイルモード変換: " . $json[ 'MODE' ] );
+	if ( $mapinfo[ 'MODE' ] != 0 && $mapinfo[ 'MODE' ] != 2 ) {
+		_m( "ファイルモード変換: " . $mapinfo[ 'MODE' ] );
 		_proc3d();
 	}
 		

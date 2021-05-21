@@ -26,7 +26,9 @@ $ign_title = array_change_key_case( array_fill_keys([
 	'Structure of a Protein Complex' ,
 	'RNA-DNA-protein complex' ,
 	'Structure of Human Apoferritin' ,
-
+	'Cryo-EM structure of a bacterial membrane protein' ,
+	'The structure and biochemical properties of PfAct2' ,
+	'Structure of a protein' ,
 ], true ));
 
 //. ID一覧取得

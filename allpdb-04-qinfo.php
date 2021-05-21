@@ -3,17 +3,16 @@ require_once( "commonlib.php" );
 $info = [];
 $fn_info = DN_PREP . '/oddpdb.txt';
 
-$taxo_rep_in = [
-	'/ type /' ,
-	'/ *\(.+\)/' ,
-//	'/hiv-1/' ,
-];
-
-$taxo_rep_out = [
-	' ' ,
-	'' ,
-//	'human immunodeficiency virus 1' ,
-];
+define( 'POLYTYPE_REP', [
+	'polypeptide(D)'			=> 'PEPD' ,
+	'polypeptide(L)'			=> 'PEPL' ,
+	'polydeoxyribonucleotide'	=> 'DNA' ,
+	'polyribonucleotide'		=> 'RNA' ,
+	'polydeoxyribonucleotide/polyribonucleotide hybrid' => 'DNA_RNA' ,
+	'cyclic-pseudo-peptide' 	=> 'CYC_PEP' ,
+	'peptide nucleic acid'		=> 'PEP_NUC' ,
+	'other'						=> 'OTHER' ,
+] );
 
 //. main loop
 foreach ( _idloop( 'pdb_json' ) as $fn ) {
@@ -35,6 +34,8 @@ foreach ( _idloop( 'pdb_json' ) as $fn ) {
 	$json = _json_load2( $fn );
 	$out = [];
 
+	list( $num_chain, $chain_types ) = _chain();
+
 	$out = [
 		'title'		=> $json->struct[0]->title ,
 		'method'	=> _method() ,
@@ -50,8 +51,9 @@ foreach ( _idloop( 'pdb_json' ) as $fn ) {
 		'repid'		=> _replaced() ,
 		'src'		=> _src() ,
 		'chemid'	=> _chemid() ,
+		'poly_type' => $chain_types ?: null,
 		'sym'		=> _sym() ,
-		'num_chain'	=> _numchain() ,
+		'num_chain'	=> $num_chain,
 		'num_atom'	=> _numatom() ,
 		'identasb'	=> _identasb() ,
 		'ribosome'	=> _ribosome() ,
@@ -189,13 +191,24 @@ function _asbid() {
 	return $ret;
 }
 
-//.. num_chain
-function _numchain() {
+//.. _chain
+function _chain() {
 	global $json;
-	$ret = 0;
-	foreach ( (array)$json->entity_poly as $j )
-		$ret += count( explode( ',', $j->pdbx_strand_id ) );
-	return $ret;
+	$num_chain = 0;
+	$chain_types = [];
+	foreach ( (array)$json->entity_poly as $j ) {
+		$num_chain += count( explode( ',', $j->pdbx_strand_id ) );
+
+		//- type
+		if ( $j->type == 'polypeptide(L)' ) continue;
+		$type = POLYTYPE_REP[ $j->type ];
+		$chain_types[ $type ] = true;
+		$len = strlen( $j->pdbx_seq_one_letter_code_can );
+		if (   10 < $len ) $chain_types[ $type. '10' ] = true;
+		if (  100 < $len ) $chain_types[ $type. '100' ] = true;
+		if ( 1000 < $len ) $chain_types[ $type. '1000' ] = true;
+	}
+	return [ $num_chain, array_keys( $chain_types ) ];
 }
 
 //.. num_atom
@@ -331,7 +344,12 @@ function _ref() {
 	foreach ( (array)$json->struct_ref as $c ) {
 		$d = strtoupper( trim( $c->db_name ) ); 
 		if ( $d == 'PDB' ) continue;
-		$ret[] = [ $d, trim( $c->pdbx_db_accession ), $c->entity_id ];
+		$refid = trim( $c->pdbx_db_accession ) ?: trim( $c->db_code );
+		if ( ! $refid ) {
+			_m( "$id-". $c->entity_id. ': no db_acceession / db_code', 'red' );
+			continue;
+		}
+		$ret[] = [ $d, $refid, $c->entity_id ];
 	}
 
 	//... bird

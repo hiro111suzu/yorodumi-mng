@@ -214,7 +214,7 @@ define( 'TASK_CATALOG', [
 	'emdb-08' , 
 	'emdb-09' , 
 	'mng omopdb' , 
-	'mng ana' , 
+//	'mng ana' , 
 ] ,
 
 'pap' => [
@@ -240,7 +240,7 @@ define( 'TASK_CATALOG', [
 	'mng taxo' ,
 	'mng met' ,
 	'mng unichem' ,
-	'emp-01-download' ,
+	'mng empiar' ,
 	'mng dbid' ,
 
 	'mng pap' ,
@@ -250,6 +250,11 @@ define( 'TASK_CATALOG', [
 	'allpdb-10' ,
 	'mng final' ,
 	
+] ,
+
+'empiar' => [
+	'emp-1' ,	
+	'emp-2' ,	
 ] ,
 
 'dbid' => [

@@ -25,6 +25,30 @@ define( 'IGNLEN', 0.02 );
 //- スコアノーマライズ値
 define( 'SCNORM', 2.17938653227261 );
 
+//- omopreのスコアリミット
+define( 'OMOPRE_SCORE_LIMIT', [
+	 0 => 0.5 ,
+	 1 => 0.6 ,
+	 2 => 0.65 ,
+	 3 => 0.65 ,
+	 4 => 0.7 ,
+	 5 => 0.75 ,
+	 6 => 0.8  ,
+	 7 => 0.8  ,
+	 8 => 0.85 ,
+	 9 => 0.85 ,
+	10 => 0.9 ,
+	11 => 0.9 ,
+	12 => 0.9 ,
+	13 => 0.9 ,
+	14 => 0.9 ,
+	15 => 0.9 ,
+	16 => 0.9 ,
+	17 => 0.9 ,
+	18 => 0.9 ,
+	19 => 0.9 ,
+]);
+
 //. function
 //.. _getcrd
 //- pdb形式データから原子座標をget
@@ -208,6 +232,11 @@ function _saveprofs( $fn, $data ) {
 }
 
 //.. _getscore スコア
+/*
+	$par:
+		- _count_ign() で自動的にプロファイルから読み込みできる
+		- 高速化のため指定できるようになっている
+*/
 function _getscore( $prof1, $prof2, $par = [] ) {
 	//- パラメータ取得
 	if ( count( $par ) == 0 )
@@ -285,3 +314,83 @@ function _prof2bin( $json ) {
 function _bin2compos( $bin ) {
 	return $bin == '' ? [] : unpack( 'S*', $bin );
 }
+
+//.. _prefilter_sql
+function _prefilter_sql( $pca, $level ) {
+	$m1 = $pca[0] * $level;
+	$m2 = $pca[1] * $level;
+	$m3 = $pca[2] * $level;
+	$l1 = $pca[0] / $level;
+	$l2 = $pca[1] / $level;
+	$l3 = $pca[2] / $level;
+	return ''
+		. " AND $m1 < pca1 AND pca1 < $l1"
+		. " AND $m2 < pca2 AND pca2 < $l2"
+		. " AND $m3 < pca3 AND pca3 < $l3"
+	;
+}
+
+//.. cls_omo_small_search 小規模検索
+class cls_omo_small_search {
+	protected $obj_db = [];
+	const PREFILT_LEV = [ 0.85, 0.7, 0.5 ];
+	const SCORE_LIMIT = 0.7;
+	
+	//... construct
+	function __construct( $db_type = '' ) {
+		$this->obj_db = $db_type == 'pre'
+			? [
+				's'  => new cls_sqlite( '/yorodumi/sqlite/omokage_pre/profdb_s.sqlite' ) ,
+				'ss' => new cls_sqlite( '/yorodumi/sqlite/omokage_pre/profdb_ss.sqlite' ) ,
+			] : [
+				's'  => new cls_sqlite( 'profdb_s' ) ,
+				'ss' => new cls_sqlite( 'profdb_ss' ) ,
+			]
+		;
+	}
+
+	
+	//... do
+	function do( $id_query ) {
+		//- stage 1
+		$query_prof = $this->getprof( $id_query, 'ss' );
+		foreach ( self::PREFILT_LEV as $level ) {
+			$result = $this->obj_db['ss']->qar([
+				'select' => [ 'id', 'data' ] ,
+				'where' => "id <> '$id_query'". _prefilter_sql( $query_prof[3], $level )
+			]);
+			if ( $result ) break;
+		}
+
+		//- stage 2
+		$count_ign = _count_ign( $query_prof );
+		$list = [];
+		foreach ( $result as $c ) {
+			$id = $data = null;
+			extract( $c );
+			$s = _getscore( $query_prof, _bin2prof( $data ), $count_ign );
+			if ( $s < self::SCORE_LIMIT ) continue;
+			$list[ $id ] = $s;
+		}
+		arsort( $list );
+
+		//- stage 3
+		$query_prof = $this->getprof( $id_query, 's' );
+		$count_ign = _count_ign( $query_prof );
+		$list2 = [];
+		foreach ( array_keys( array_slice( $list, 0, 20 ) ) as $id ) {
+			$list2[ $id ] = _getscore( $query_prof, $this->getprof( $id, 's' ), $count_ign );
+		}
+		arsort( $list2 );
+		return $list2;
+	}
+
+	//... getprof
+	function getprof( $id, $type ) {
+		return _bin2prof( $this->obj_db[ $type ]->qcol([
+			'select' => 'data' ,
+			'where' => "id='$id'" ,
+		])[0] );
+	}
+}
+

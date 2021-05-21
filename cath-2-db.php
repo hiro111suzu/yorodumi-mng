@@ -24,6 +24,8 @@ $json = [];
 foreach ( gzfile( FN_CATH_ALL ) as $line ) {
 	_count( 50000 );
 	list( $id, $version, $cid, $data ) = explode( ' ', trim( $line ), 4 );
+	$id = substr( $id, 0, 4 );
+	if ( ! _inlist( $id, 'pdb' ) ) continue;
 
 	$seq = [];
 	foreach ( explode( ',', $data ) as $s )
@@ -34,7 +36,7 @@ foreach ( gzfile( FN_CATH_ALL ) as $line ) {
 		'cid' => $cid ,
 		'seq' => $seq
 	];
-	$json[ substr( $id, 0, 4 ) ][] = $cid;
+	$json[ $id ][] = $cid;
 }
 
 _line( 'CATH-all load' );

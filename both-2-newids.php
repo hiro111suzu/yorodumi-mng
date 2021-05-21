@@ -79,8 +79,6 @@ _m( $msg = ''
 	. 'PDB更新 (EM/all) : ' . $count_update_pdb .' / '. count( $updpdb ) . " 件\n"
 );
 
-
-
 //. 前回データ
 //.. 次の水曜（木曜日と金曜日は、前の水曜）
 $daysec = 60 * 60 * 24; //- 一日の秒数

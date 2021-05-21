@@ -3,7 +3,6 @@ require_once( "unp-common.php" );
 $pdbid2unpid = [];
 
 //. pdbid2unpid
-$flg_changed = false;
 foreach ( _idloop( 'qinfo', 'PDBからUniprotID収集' ) as $fn ) {
 	if ( _count( 'pdb', 0 ) ) break;
 	$id = _fn2id( $fn );

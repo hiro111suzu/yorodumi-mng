@@ -11,14 +11,14 @@ define( 'RD', 'rsyncでダウンロード' );
 _rsync([
 	'title' => 'PDBMLplus' ,
 	'from'	=> [ 'XML/pdbmlplus/pdbml_add/' ],
-	'to'	=> DN_FDATA . '/pdbmlplus'
+	'to'	=> DN_FDATA. '/pdbmlplus'
 ]);
 
 //.. PDBML 取得
 _rsync([
 	'title' => 'PDBML no-atom' ,
 	'from'	=> [ 'XML/all-noatom/' ],
-	'to'	=> DN_FDATA . '/pdbml_noatom/' ,
+	'to'	=> DN_FDATA. '/pdbml_noatom/' ,
 	'opt'	=> '-L' //- シンボリックリンクの実体
 ]);
 
@@ -27,7 +27,7 @@ _rsync([
 _rsync([
 	'title' => 'PDB形式 登録構造' ,
 	'from'	=> [ 'pdb/' ] ,
-	'to'	=> DN_FDATA . '/pdb/dep/' ,
+	'to'	=> DN_FDATA. '/pdb/dep/' ,
 	'opt'	=> '-L' //- シンボリックリンクの実体
 ]);
 
@@ -35,7 +35,7 @@ _rsync([
 _rsync([
 	'title' => 'PDB形式 集合体',
 	'from'	=> [ 'pub/pdb/data/biounit/coordinates/all/' ],
-	'to'	=> DN_FDATA . '/pdb/asb/' ,
+	'to'	=> DN_FDATA. '/pdb/asb/' ,
 	'opt'	=> '-L' //- シンボリックリンクの実体
 ]);
 
@@ -43,7 +43,7 @@ _rsync([
 _rsync([
 	'title' => 'mmCIF形式',
 	'from'	=> [ 'mmcif/' ],
-	'to'	=> DN_FDATA . '/mmcif' ,
+	'to'	=> DN_FDATA. '/mmcif' ,
 	'opt'	=> '-L' //- シンボリックリンクの実体
 ]);
 
@@ -60,7 +60,7 @@ _rsync([
 ]);
 _rsync([
 	'title' => 'obsoleteデータ dat' ,
-	'from'	=> [ '/pub/pdb/data/status/obsolete.dat' ],
+	'from'	=> [ 'pub/pdb/data/status/obsolete.dat' ],
 	'to'	=> DN_FDATA
 ]);
 
@@ -70,7 +70,7 @@ _rsync([
 _rsync([
 	'title'	=> 'large biounit',
 	'from'	=> [ 'pub/pdb/data/biounit/mmCIF/all/' ],
-	'to'	=> DN_FDATA . '/large_structures_asb/' ,
+	'to'	=> DN_FDATA. '/large_structures_asb/' ,
 	'opt'	=> '-L' //- シンボリックリンクの実体
 ]);
 
@@ -78,7 +78,7 @@ _rsync([
 _rsync([
 	'title'	=> 'bundle',
 	'from'	=> [ 'pub/pdb/compatible/pdb_bundle/' ],
-	'to'	=> DN_FDATA . '/pdb_bundle/' ,
+	'to'	=> DN_FDATA. '/pdb_bundle/' ,
 	'opt'	=> '-L' //- シンボリックリンクの実体
 ]);
 
@@ -111,13 +111,13 @@ foreach ( _idloop( 'pdbml_noatom', '全IDリスト作成' ) as $fn ) {
 	}
 }
 
-_comp_save( DN_DATA . '/ids/pdb.txt'	, $all );
-_comp_save( DN_DATA . '/ids/large.txt'	, $large );
+_comp_save( DN_DATA. '/ids/pdb.txt'	 , $all );
+_comp_save( DN_DATA. '/ids/large.txt', $large );
 
 //. edmap list
 copy(
-	DN_FDATA . '/edmap.list' , 
-	DN_DATA . '/ids/edmap.txt'
+	DN_FDATA. '/edmap.list' , 
+	DN_DATA. '/ids/edmap.txt'
 );
 _cnt();
 

@@ -26,7 +26,13 @@ if ( ! IDLIST_MOVREC ) {
 	_marem_log( 'Rec確認 ジョブなし' );
 	die();
 }
-_marem_log( 'rec開始 - ジョブ数: '. count( IDLIST_MOVREC ) );
+$count_mov = 0;
+$count_did = 0;
+foreach ( array_keys( IDLIST_MOVREC ) as $k ) {
+	if ( _instr( '-', $k ) )
+		++ $count_mov;
+}
+_marem_log( "rec開始 - ムービー数: $count_mov" );
 
 //.. スクリプトテンプレート
 //... 回転だけ
@@ -181,8 +187,9 @@ foreach( _idlist( 'emdb' ) as $id ) {
 		_marem_log( "$id-$movid: rec 開始" );
 		_exec( CMD_CHIMERA. $fn_py .' '. $fn_cmd );
 		_del( $fn_recording );
-		_marem_log( "$id-$movid: rec 終了" );
-		
+		++ $count_did;
+		_marem_log( "$id-$movid: rec 終了 ($count_did / $count_mov)" );
+
 		//- いらないファイルを削除
 		_del(
 			$fn_snapl ,

@@ -1,0 +1,7 @@
+/LostAndFound/
+/lost+found/
+/db/fdata/
+/db/mongodb/
+/bkup/
+/Dropbox/
+/dic/

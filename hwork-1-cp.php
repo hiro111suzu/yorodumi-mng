@@ -39,6 +39,7 @@ foreach ( _file( DN_PREP. '/problem/movie-1-movieinfo.txt' ) as $line ) {
 $from_list = [];
 foreach ( _file( DN_EDIT. '/hwork_emdb_id.txt' ) as $line ) {
 	$id = trim( _numonly( $line ) );
+	if ( ! $id ) continue;
 	if ( ! _inlist( $id, 'emdb' ) ) {
 		_m( "$id: non EMDB-ID" );
 		continue;

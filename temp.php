@@ -1,6 +1,40 @@
 <?php
 define( 'FLG', $argv[1] );
 require_once( "commonlib.php" );
+$tsv = _tsv_load2( DN_EDIT. '/chem_annot.tsv' );
+$chem_ignroe = [];
+foreach ( $tsv['dbid_ignore'] as $key => $dummy ) {
+	$chem_ignroe[ $key ] = true;
+}
+foreach ( $tsv['class'] as $key => $val ) {
+	if ( in_array( $val, [ 'buf', 'det', 'pre' ] ) ) {
+		$chem_ignroe[ $key ] = true;
+	}
+}
+
+print_r( $chem_ignroe );
+/*
+foreach ( ( new cls_sqlite('strid2dbids') )->qar([
+	'select' => [ 'strid', 'dbids' ]
+]) as $ar ) {
+	extract( $ar );
+	$head = substr( $strid, 0, 1 );
+	if ( $head == 'e' || $head == 'S' ) continue;
+	if ( _inlist( $strid, 'pdb' ) ) continue;
+
+	$bad = [];
+	foreach ( explode( '|', $dbids ) as $dbid ) {
+		$type = explode( ':', $dbid )[0];
+		++ $bad[ $type ];
+		_cnt( $type );
+	}
+	_m( "$id: ", implode( ', ', array_keys( $bad ) ) );
+}
+
+_line( 'end' );
+_cnt();
+
+
 /*j
 $_filenames += [
 	'que_todo'	=> DN_PREP . '/img_que/todo/<name>.json' ,

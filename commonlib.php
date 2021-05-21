@@ -765,7 +765,7 @@ function _movie_encode( $dn_base, $mov_id ) {
 	}
 }
 
-//.. 
+//.. _mov_snaps
 //function _mov_snaps( $in, $l, $s, $ss ) {
 function _mov_snaps( $dn_ent, $mov_id, $num_snap ) {
 	$msg = basename( $dn_ent ) . "-$mov_id:";
@@ -784,7 +784,7 @@ function _mov_snaps( $dn_ent, $mov_id, $num_snap ) {
 //.. _rsync: rsyncを実行
 //- 引数 array: 'from', 'to', 'uname', 'opt'
 function _rsync( $p ) {
-	$from = $to = $uname = $opt = $exclude = $tite = '';
+	$from = $to = $uname = $opt = $tite = $dryrun = $exclude = $copylink = '';
 	$uname = 'pdbj'; //- ユーザー名デフォルト（スクリプトアップロードのときだけhirofumi）
 	extract( $p );
 
@@ -794,22 +794,21 @@ function _rsync( $p ) {
 		$title
 	);
 
-	//- exclude
-	if ( $exclude != '' && $exclude != [] ) {
-		if ( ! is_array( $exclude ) )
-			$exclude = [ $exclude ];
-		$e = [];
-		foreach ( $exclude as $c )
-			$e = "exclude=$c";
-		$exclude = implode( ' ', $e );
-	}
-
 	//- opt(その他のオプション)
 	if ( is_array( $opt ) )
 		$opt = implode( ' ', $opt );
-	
+	if ( $dryrun )
+		$opt .= ' --dry-run';
+	if ( $copylink )
+		$opt .= ' --copy-links';
+	if ( $exclude ) {
+		$fn = _tempfn( 'txt' );
+		file_put_contents( $fn, $exclude );
+		$opt .= " --exclude-from=$fn";
+	}
+
 	//- ログファイル名
-	$templogfn = _tempfn( 'txt' );
+	$fn_templog = _tempfn( 'txt' );
 
 	//- 送信元がリモート？
 	$from = _rsync_dir( $from );
@@ -818,13 +817,16 @@ function _rsync( $p ) {
 		? "$uname@$from $to"
 		: "$from $uname@$to"
 	;
-	$l = "rsync -avz --log-file=$templogfn $opt --delete -e ssh $from_to";
+	$l = "rsync -avz --log-file=$fn_templog $opt --delete -e ssh $from_to";
 	_kvtable([
+		'dryrun' => $dryrun ? 'YES' : 'no' ,
 		'uname'	=> $uname ,
 		'from'	=> $from ,
 		'to'	=> $to ,
-		'opt'	=> $opt ,
-		'command' => $l
+		'exclude' => $exclude ? count( explode( "\n", $exclude ) ). ' items' : 'none',
+		'copylink' => $copylink ? 'YES' : 'no' ,
+//		'opt'	=> $opt ,
+		'command' => $l ,
 	], 'rsync条件' );
 
 	if ( NORSYNC ) {
@@ -836,7 +838,7 @@ function _rsync( $p ) {
 	
 	//- log
 	$logfn = DN_PREP . '/rsync-log/log-' . date( 'Y-m-d' ) . '.txt';
-	$log = file_get_contents( $templogfn );
+	$log = file_get_contents( $fn_templog );
 	
 	$cnt = [];
 	foreach ( (array)explode( "\n", $log ) as $line ) {
@@ -861,7 +863,7 @@ function _rsync( $p ) {
 	} else {
 		_m( 'rsync完了 - 変更なし', 'blue' );
 	}
-	_del( $templogfn );
+	_del( $fn_templog );
 }
 
 //... _rsync_dir: kf1のディレクトリアドレス
@@ -869,29 +871,42 @@ function _rsync( $p ) {
 //- ディレクトリ名には"-pre"をつける
 //- [ pdbj-pre/よりあとの発文字列, 'サーバー名' ]という感じ
 function _rsync_dir( $path ) {
+	//- 文字列ならそのまま返す、リモートなら配列なので
+	if ( is_string( $path ) ) return $path;
+	list( $dn, $server ) = $path;
+	$server = [
+		'if1'  => 'pdbjif1-p' , //- 廃止後に削除
+		'iw1'  => 'pdbjiw1-p' , //- 廃止後に削除
+		'lvh1' => 'pdbjlvh1' ,
+		'bk1'  => 'pdbjbk1' ,
+	][ $server ] ?: $server ?: 'pdbjif1-p';
 
-	if ( is_string( $path ) ) return $path; //- 文字列ならそのまま返す
-	$serv = $path[1] ?: ( FLG_FILESV3 ? 'pdbjif1-p' : 'if1' );
+	//- if1 削除予定
+	if ( $server == 'pdbjif1-p' )
+		$dn = '/var/PDBj/ftp/pdbj<>/'. $dn;
 
-	$w = _youbi();
-	$h = date( 'H' );
-	$s =  "現在: {$w}曜日 {$h}時 : 新規データ公開の";
-	
-	//- 水曜9時以降?
-	if (
-		( $w == '水' && 9 < date( 'H' ) ) || 
-		$w == '木' || 
-		$w == '金' ||
-		( $w == '土' && date( 'H' ) < 4 )
-	) {
-		_m( $s . '後 -> 公開データにアクセス' );
-		$path = 'pdbj/' . $path[0];
-	} else {
-		_m( $s . '前 -> preデータにアクセス' );
-		$path = 'pdbj-pre/' . $path[0];
+	//- 曜日対応
+	if ( _instr( '<>', $dn ) ) {
+		$w = _youbi();
+		$h = date( 'H' );
+		$s =  "現在: {$w}曜日 {$h}時 : 新規データ公開の";
+		
+		//- 水曜9時以降?
+		if (
+			( $w == '水' && 9 < date( 'H' ) ) || 
+			$w == '木' || 
+			$w == '金' ||
+			( $w == '土' && date( 'H' ) < 4 )
+		) {
+			_m( $s . '後 -> 公開データにアクセス' );
+			$dn = strtr( $dn, [ '<>' => '' ] );
+		} else {
+			_m( $s . '前 -> preデータにアクセス' );
+			$dn = strtr( $dn, [ '<>' => '-pre' ] );
+		}
 	}
-
-	return "$serv:/var/PDBj/ftp/$path";
+//	_pause( "$server:$dn" );
+	return "$server:$dn";
 }
 
 //. functions: コンソール・ジョブ制御など

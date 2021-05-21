@@ -1,0 +1,7 @@
+all_obsolete_pdbid.txt
+latest_new_pdbid.txt
+latest_updated_pdbid.txt
+
+latest_new_header.txt
+latest_new_map.txt
+latest_updated_map.txt

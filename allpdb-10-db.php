@@ -34,6 +34,7 @@ foreach ( _idloop( 'qinfo' ) as $fn ) {
 		' ' . implode( ' | ', (array)_file( _fn( 'pdb_auth', $id  ) ) ) . ' ',
 		json_encode( array_filter([
 			'identasb' => $json->identasb ,
+			'asb' => $json->asbid ,
 			'src' => array_values( (array)$json->src ) ,
 		]), JSON_UNESCAPED_SLASHES + JSON_UNESCAPED_UNICODE ) ,
 	]);

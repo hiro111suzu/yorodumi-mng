@@ -13,9 +13,17 @@ $cnt = [];
 
 //. データ読み込み
 _line( '読み込み' );
-foreach ( [ FN_DBDATA_PDB, FN_DBDATA_EMDB, FN_DBDATA_SASBDB ] as $fn ) {
+foreach ([ 
+	'pdb'  => FN_DBDATA_PDB,
+	'emdb' => FN_DBDATA_EMDB,
+	'sas'  => FN_DBDATA_SASBDB
+] as $db => $fn ) {
 	_m( '読み込み: ' . basename( $fn ) );
 	foreach ( _json_load( $fn ) as $str_id => $db_ids ) {
+		if ( $db == 'emdb' ) {
+			$str_id = "e$str_id";
+//			_pause( $str_id );
+		}
 		foreach ( $db_ids as $db_id ) {
 			list( $d, $i ) = explode( ':', $db_id );
 			if ( !$i ) continue;
@@ -28,11 +36,37 @@ _line( '集計' );
 foreach ( $data as $db_id => $str_ids ) {
 	$i = array_values( array_unique( $str_ids ) );
 	$data[ $db_id ] = $i;
-	$cnt[ $db_id ] = count( $i );
+	$cnt[ strtolower( $db_id ) ] = count( $i );
 }
 _comp_save( DN_PREP. '/dbid/dbid2strids.json.gz', $data ); //- 使っていない、念の為
 _comp_save( FN_DBID2STRCNT, $cnt );
 
+//.. db dbid2strid
+define( 'FN_DBID2STRIDS', DN_DATA. '/dbid2strids.sqlite' );
+
+_line( 'db: dbid2strid' );
+$o_fh2str = new cls_sqlw([
+	'fn' => FN_DBID2STRIDS , 
+	'cols' => [
+		'dbid UNIQUE COLLATE NOCASE' ,
+		'strids COLLATE NOCASE' ,
+		'score REAL' ,
+	],
+	'new' => true ,
+	'indexcols' => [ 'dbid' ] ,
+]);
+foreach ( $data as $dbid => $str_id ) {
+	_count( 10000 );
+	if ( ! $cnt[ strtolower( $dbid ) ] )
+		_m( $dbid. ': zero entry', 'red' );
+	$o_fh2str->set([
+		$dbid,
+		implode( '|', $str_id ),
+		1 / ( $cnt[ strtolower( $dbid ) ] ?: 1000000 )
+	]);
+}
+_count();
+$o_fh2str->end();
 unset( $data );
 
 //. prep DB
@@ -107,20 +141,28 @@ foreach ( $cnt as $db_id => $num ) {
 		
 	} else if ( $db == 'bd' ) {
 		$txt = INFO_BIRD[ $id ];
+	} else if ( $db ==  'chem' ) {
+		$i = strtoupper( $id );
+		$t = _ezsqlite([
+			'dbname' => 'chem' ,
+			'select' => 'name' ,
+			'where'  => [ 'id', $i  ] ,
+		]);
+		$txt = strlen( $t ) < 50 ? $t : "Chem-$i";
+	} else if ( $db == 'poly' ){
+		$num = _numonly( $id );
+		$type = strtr( $id, [ $num => '' ] );
+		$txt = ( [
+			'PEPD'		=> 'polypeptide(D)' ,
+			'DNA_RNA'	=> 'DNA/RNA hybrid' ,
+			'pep_nuc'	=> 'peptide nucleic acid' ,
+		][ $type ] ?: strtoupper( $type ) )
+		. ( $num ? " (> $num)" : '' )
+		;
 	}
-	$type = [
-		'ec' => 'f' ,
-		'go' => 'f' ,
-		'rt' => 'f' ,
-		'pf' => 'h' ,
-		'in' => 'h' ,
-		'pr' => 'h' ,
-		'ct' => 'h' ,
-	][ $db ] ?: 'c';
-
 	$sqlite->set([
 		$db_id ,
-		$type ,
+		_db_name2categ( $db ) ,
 		is_array( $txt ) ? implode( '|', $txt ) : $txt, 
 		$num ,
 	]);

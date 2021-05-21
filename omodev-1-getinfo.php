@@ -3,22 +3,19 @@
 //. init
 require_once( "commonlib.php" );
 require_once( "omo-common.php" );
-_mkdir( DN_PREP . '/omodev' );
-_mkdir( DN_PREP . '/omodev/compinfo' );
+_mkdir( DN_PREP. '/omodev' );
+_mkdir( DN_PREP. '/omodev/compinfo' );
 
 //. main
 
-foreach ( _idloop( 'pdb_json' ) as $jsonfn ) {
+foreach ( _idloop( 'pdb_json' ) as $fn_json ) {
 	//.. 準備
-	$pdbid = _fn2id( $jsonfn );
-	if ( _count( 5000, 0 ) ) break;
-//	if ( $argv[1] != '' && $argv[1] != $pdbid ) continue;
-//	_m( $pdbid, 'blue' );
-	$outfn = _fn( 'compinfo', $pdbid );
-	if ( FLG_REDO ) _del( $outfn );
-	if ( _newer( $outfn, $jsonfn ) ) continue;
-	$json = _json_load2( $jsonfn );
-
+	$pdb_id = _fn2id( $fn_json );
+	if ( _count( 'pdb', 0 ) ) break;
+	$fn_out = _fn( 'compinfo', $pdb_id );
+	if ( FLG_REDO ) _del( $fn_out );
+	if ( _newer( $fn_out, $fn_json ) ) continue;
+	$json = _json_load2( $fn_json );
 
 	//.. entity
 	$ent_mw = $ent_len = $ent_type = [];
@@ -51,7 +48,7 @@ foreach ( _idloop( 'pdb_json' ) as $jsonfn ) {
 		$asym_type[$i] = $ent_type[ $eid ];
 		$aids[] = $i;
 		if ( $asym_mw[$i] == 0 ) {
-			_prpblem( "$pdbid-asym#$i (entity #$eid): mw = 0" );
+			_prpblem( "$pdb_id-asym#$i (entity #$eid): mw = 0" );
 		}
 	}
 
@@ -61,12 +58,12 @@ foreach ( _idloop( 'pdb_json' ) as $jsonfn ) {
 	foreach ( (array)$json->struct_conf as $c ) {
 		if ( $c->conf_type_id == 'TURN_P' ) continue;
 		foreach ( range( $c->beg_label_seq_id, $c->end_label_seq_id ) as $i ) {
-			$flg_alpha[ $c->beg_label_asym_id ][$i] = ture;
+			$flg_alpha[ $c->beg_label_asym_id ][$i] = true;
 		}
 	}
 	foreach ( (array)$json->struct_sheet_range as $c ) {
 		foreach ( range( $c->beg_label_seq_id, $c->end_label_seq_id ) as $i ) {
-			$flg_beta[ $c->beg_label_asym_id ][$i] = ture;
+			$flg_beta[ $c->beg_label_asym_id ][$i] = true;
 		}
 	}
 
@@ -108,7 +105,7 @@ foreach ( _idloop( 'pdb_json' ) as $jsonfn ) {
 	$data = [];
 //	_kvtable( $asb2asym, 'asb'  );
 	foreach ( $asb2asym as $abid => $asymids ) {
-		if ( _inlist( "$pdbid-$abid", 'identasb' ) ) continue;
+		if ( _inlist( "$pdb_id-$abid", 'identasb' ) ) continue;
 		$sum = $alpha = $beta = $nuc = 0;
 		$vals = [];
 		foreach ( $asymids as $i ) {
@@ -121,7 +118,7 @@ foreach ( _idloop( 'pdb_json' ) as $jsonfn ) {
 			$beta  += $asym_beta[$i];
 		}
 		if ( $sum == 0 ) { //- peptide/nuc がないエントリ
-//			_m( "$pdbid-$abid: ws = 0", 'red' );
+//			_m( "$pdb_id-$abid: ws = 0", 'red' );
 			$sum = 1000000;
 		}
 		rsort( $vals );
@@ -143,7 +140,7 @@ foreach ( _idloop( 'pdb_json' ) as $jsonfn ) {
 //	_m( json_encode( $data , JSON_PRETTY_PRINT) );
 //	_pause( 'pause' );
 
-	_json_save( $outfn, $data ); 
+	_json_save( $fn_out, $data ); 
 }
 
 //. 

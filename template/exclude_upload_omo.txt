@@ -1,0 +1,8 @@
+*~
+hoge*
+tags
+tags.txt
+/userdata
+/primedata
+/results
+/_*

@@ -68,8 +68,47 @@ _del( '../emnavi/php_errors.log' );
 //. rsync
 _line( FLG_DRY_RUN ? 'テストモードで実行 (本番は"do"をオプションで)' : '本番アップロード' );
 
-$dry_run = FLG_DRY_RUN ? '--dry-run' : ''; 
-passthru( "rsync $dry_run -avz --copy-links --exclude-from=exclude_upload_emn.txt --delete -e ssh ../emnavi/ hirofumi@pdbjiw1-p:/home/web/html/emnavi/" );
+$exclude = <<<EOD
+*.tar
+*.situs
+*.mrc
+*.obj
+*.map
+*.mtl
+.emanlog
+start.py
+*.pyc
+*.md5
+*.cmd
+*.ent
+*~
+hoge*
+tags
+tags.txt
+/view_cache
+/data
+/json_test
+/primedata
+/omocache
+/_*
+/.git
+EOD;
+
+foreach ([
+	'iw1'	=> '/home/web/html/emnavi/' ,
+	'lvh1'	=> '/home/web/sites/pdbj.org/emnavi/' ,
+	'bk1'	=> '/home/web/sites/pdbj.org/emnavi/' ,
+] as $serv => $dn ) {
+	_rsync([
+		'title'		=> "EMN web script => $serv" ,
+		'from'		=> DN_EMNAVI. '/' ,
+		'to'		=> [ $dn, $serv ] ,
+		'uname' 	=> 'hirofumi' ,
+		'copylink'	=> true ,
+		'dryrun'	=> FLG_DRY_RUN ,
+		'exclude'	=> $exclude
+	]);
+}
 
 if ( FLG_DRY_RUN )
 	_m( 'アップロードしていません', 'red' );

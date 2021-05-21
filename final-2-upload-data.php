@@ -1,11 +1,10 @@
 <?php
 include 'commonlib.php';
 
-//. exclude
-_line( 'exclude リスト作成' );
+_line( "EMN データをアップロード" );
 
-$fn_exclude = "template/exclude_upload_data.txt";
-_comp_save( $fn_exclude, <<<EOD
+//. rsync
+$exclude = <<<EOD
 *.tar
 *.situs
 *.mrc
@@ -32,23 +31,20 @@ gomibako/
 /mnglog/
 /temp/
 /gz
+EOD;
 
-EOD
-);
-
-
-//. 
-_line( "EMN データをアップロード" );
-
-chdir( __DIR__ );
-foreach ( [ 'pdbjif1-p' ] as $serv ) {
-//foreach ( [ 'nf1', 'if1' ] as $serv ) {
-	_rsync( [
-		'title'	=> "data upload-> $serv" ,
-		'from'	=> DN_DATA . '/' ,
-		'to'	=> [ 'emnavi/data/', $serv ] ,
-		'opt'	=> "--exclude-from=$fn_exclude --copy-links" // --dry-run"
+foreach ([
+	'if1'  => 'emnavi/data/' ,
+	'lvh1' => '/data/pdbj/data<>/work/emnavi/data/', 
+	'bk1'  => '/data/pdbj/data<>/work/emnavi/data/', 
+] as $serv => $dn ){
+	_rsync([
+		'title'		=> "data upload-> $serv" ,
+		'from'		=> DN_DATA . '/' ,
+		'to'		=> [ $dn, $serv ] ,
+		'copylink'	=> true ,
+		'exclude'	=> $exclude ,
+//		'dryrun'	=> true
 	]);
 }
-
 _end();

@@ -7,8 +7,10 @@ require_once( "commonlib.php" );
 //. rsync
 _rsync([
 	'title' => 'EMDBアーカイブ取得' ,
-	'from'	=> [ 'pub/emdb/' ] ,
-	'to'	=> DN_EMDB_MR
+//	'from'	=> [ '/data/pdbj/data<>/ftp/pub/emdb/', 'lvh1' ] ,
+	'from'	=> [ 'pub/emdb/', 'if1' ] ,
+	'to'	=> DN_EMDB_MR ,
+//	'dryrun' => true
 ]);
 
 //. copy xml files

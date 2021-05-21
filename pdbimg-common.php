@@ -85,7 +85,7 @@ define( 'J_FILT_BB',	',*.CA,*.P,![ca],![HETATOM]' );
 
 //. function
 //.. _qok
-//- やらなくていいならtrueを返す、tureでcontinue
+//- やらなくていいならtrueを返す、trueでcontinue
 function _qok( $fn_coord, $id, $type ) {
 	if ( _redo_id( $id ) ) {
 		_m( "$id: to redo", 'blue' );

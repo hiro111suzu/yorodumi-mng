@@ -10,6 +10,8 @@ foreach( _idlist( 'emdb' ) as $id ) {
 
 //. ムービーごとのループ
 	foreach ( range( 1, 20 ) as $movid ) {
+//	foreach ( [2] as $movid ) { //- 2を優先させたいときに使う
+
 		//.. ファイル名
 		$dn_frame  		= "img$movid";
 		$fn_py    		= "s$movid.py";
