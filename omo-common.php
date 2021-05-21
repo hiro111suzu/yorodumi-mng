@@ -1,5 +1,5 @@
 <?php
-include "omo-calc-common.php";
+include DN_EMNAVI. "/omo-calc-common.php";
 
 /*
 omo-pdbスクリプトで利用
