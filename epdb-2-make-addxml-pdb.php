@@ -68,7 +68,7 @@ foreach( _idlist( 'epdb' ) as $id ) {
 
 	//.. authors
 	$a = [];
-	foreach( $json->audit_author as $au )
+	foreach( (array)$json->audit_author as $au )
 		$a[ $au->pdbx_ordinal ] = $au->name;
 	$data[ 'author' ] = array_values( $a );
 
@@ -78,7 +78,7 @@ foreach( _idlist( 'epdb' ) as $id ) {
 		_m( "$id: $pmid_tsv" );
 
 	$pmid_xml = '';
-	foreach ( $json->citation as $x ) {
+	foreach ( (array)$json->citation as $x ) {
 		if ( $x->id != 'primary' ) continue;
 		$pmid_xml = $x->pdbx_database_id_PubMed;
 	}

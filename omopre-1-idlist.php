@@ -51,8 +51,13 @@ function _set( $id, $date, $db ) {
 	//- すでにある
 	$fn = _fn( 'omolist', $id );
 	if ( file_exists( $fn ) ) {
-		_cnt( "$db - exists" );
-		return;
+		if ( filesize( $fn ) < 10 ) {
+			_cnt( "$db - zero" );
+			_del( $fn );
+		} else {
+			_cnt( "$db - exists" );
+			return;
+		}
 	}
 
 	//- DBにあるか

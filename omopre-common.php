@@ -16,5 +16,5 @@ $_filenames += [
 ];
 
 $dn = '/yorodumi/sqlite/omokage_pre';
-define( 'FN_DB_S',  $dn. '/profdb_s.sqlite' );
-define( 'FN_DB_SS', $dn. '/profdb_ss.sqlite' );
+define( 'FN_DB_S',  DN_DATA. '/profdb_s.sqlite' );
+define( 'FN_DB_SS', DN_DATA. '/profdb_ss.sqlite' );

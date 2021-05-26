@@ -146,6 +146,11 @@ define( 'TASK_CATALOG', [
 	'omopdb-3' ,
 	'omopdb-4' ,
 ],
+'omopre' => [
+	'omopre-1' ,
+	'omopre-2' ,
+	'omopre-3' ,
+],
 
 //'nmr' => [
 //	'nmr-1-fitrobo' ,

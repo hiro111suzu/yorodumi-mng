@@ -54,6 +54,7 @@ _m( 'リストでID指定: '. ( _imp( $from_list ) ?: 'なし' ) );
 
 foreach ( _file( DN_PREP. '/problem/movie-6-check.txt' ) as $line ) {
 	$emdb_id = _numonly( explode( ':', $line )[0] );
+	if ( strlen( $emdb_id ) < 4 ) continue;
 	$emdb_ids[] = $emdb_id;
 	$emdb2pdb[ $emdb_id ][] = explode( '-', $line )[1];
 }
