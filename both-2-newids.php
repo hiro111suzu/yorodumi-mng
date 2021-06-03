@@ -28,9 +28,10 @@ EOD
 
 _rsync([
 	'title' => '新規・更新データID一覧取得' ,
-	'from'	=> [ 'XML/pdbmlplus/' ] ,
+	'from'	=> [ 'XML/pdbmlplus/', 'lvh2' ] ,
 	'to'	=> DN_DEST ,
-	'opt'	=> "--files-from=$fn_list"
+	'opt'	=> "--files-from=$fn_list" ,
+//	'dryrun' => true ,
 ]);
 _del( $fn_list );
 

@@ -33,9 +33,9 @@ foreach ( _idlist( 'emdb' ) as $emdb_id ) {
 	$an_id = $annot[ $emdb_id ];
 	if ( ! $unp_ids && ! $an_id ) {
 		$pmid = _ezsqlite([
-			'dbname' => 'main' ,
+			'dbname' => 'pmid' ,
 			'select' => 'pmid' ,
-			'where'  => [ 'db_id', "emdb-$emdb_id" ] ,
+			'where'  => [ 'strid', "e$emdb_id" ] ,
 		]);
 		if ( $pmid )
 			$an_id = $annot[ $pmid ];
@@ -72,7 +72,7 @@ foreach ( _idlist( 'emdb' ) as $emdb_id ) {
 		$a[] = "in:$i";
 	foreach ( (array)$emdb_data[ $emdb_id ][ 'go' ] as $i )
 		$a[] = 'go:' . strtr( $i, [ 'GO:' => '' ] );
-	_unq_ids( $a );
+	_uniq_ids( $a );
 	$data[ $emdb_id ] = $a;
 }
 ksort( $annot );
@@ -152,7 +152,7 @@ foreach ( _idloop( 'qinfo' ) as $fn ) {
 	foreach ( (array)$json->poly_type as $i ) {
 		$data[ $pdb_id ][] = _set( 'poly', $i );
 	}
-	_unq_ids( $data[ $pdbid ] );
+	_uniq_ids( $data[ $pdb_id ] );
 }
 _count();
 
@@ -181,7 +181,7 @@ function _get_unp_data( $unp_ids ) {
 	foreach ( array_unique( $unp_ids ) as $unp_id ) {
 		$ids = array_merge( $ids, (array)_get_unp_data_main( $unp_id ) );
 	}
-	_unq_ids( $ids );
+	_uniq_ids( $ids );
 	return $ids;
 }
 
@@ -220,24 +220,24 @@ function _get_unp_data_main( $unp_id ) {
 
 	//... pfam / prosite
 	if ( (object)$json->dbref ) {
-		foreach ( (array)$json->ref->Pfam as $c2 ) {
+		foreach ( (array)$json->dbref->Pfam as $c2 ) {
 			$ids[] = _set( 'pf', $c2[0] );
 		}
-		foreach ( (array)$json->ref->PROSITE as $c2 ) {
+		foreach ( (array)$json->dbref->PROSITE as $c2 ) {
 			$ids[] = _set( 'pr', $c2[0] );
 		}
-		foreach ( (array)$json->ref->SMART as $c2 ) {
+		foreach ( (array)$json->dbref->SMART as $c2 ) {
 			$ids[] = _set( 'sm', $c2[0] );
 		}
-		foreach ( (array)$json->ref->Reactome as $c2 ) {
+		foreach ( (array)$json->dbref->Reactome as $c2 ) {
 			$ids[] = _set( 'rt', $c2[0] );
 		}
 	}
 	return $ids;
 }
-//.. _unq_ids
-function _unq_ids( &$ids ) {
-	$ids = array_values( array_unique( $ids ) );
+//.. _uniq_ids
+function _uniq_ids( &$ids ) {
+	$ids = array_values( array_unique( (array)$ids ) );
 	sort( $ids );
 }
 

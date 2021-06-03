@@ -5,6 +5,7 @@ define( 'URL_SRC', 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db
 
 define( 'TODAY', date( 'Y-m-d', time() - 90 * 3600 * 24 ) ); //- 90日
 define( 'TSVDATA', _tsv_load2( DN_EDIT. '/pubmed_id.tsv' ) );
+define( 'PAP_TITLE', _tsv_load( DN_EDIT. '/pap_title.tsv' ) );
 
 //. blacklist
 $ign_id = array_fill_keys([
@@ -45,7 +46,7 @@ foreach( TSVDATA[ 'emdb' ] as $id => $pmid ) {
 	$main_json = _json_load2([ 'emdb_new_json', $id ])
 		->crossreferences->primary_citation->journal_citation;
 	$data[ "e$id" ] = [
-		't' => $main_json->title ,
+		't' => PAP_TITLE[ $id ] ?: $main_json->title ,
 		'a' => $main_json->author
 	];
 }
@@ -56,7 +57,9 @@ foreach( TSVDATA[ 'pdb' ] as $id => $pmid ) {
 	if ( $ign_id[ $id ] || $pmid ) continue;
 	$json = _json_load2( _fn( 'epdb_json', $id ) );
 	//- title
-	foreach ( (array)$json->citation as $j ) {
+	if ( PAP_TITLE[ $id ] ) {
+		$data[ $id ][ 't' ] = PAP_TITLE[ $id ];
+	} else foreach ( (array)$json->citation as $j ) {
 		if ( $j->id != 'primary' ) continue;
 		$data[ $id ][ 't' ] = $j->title;
 		break;
@@ -85,6 +88,8 @@ foreach ( $data as $id => $c ) {
 }
 $total = count( $title2ids );
 _m( "$total 件のデータ取得" );
+//_json_save( 'test.json', $title2ids );
+
 
 //. test
 _line( '検索開始' );
@@ -110,6 +115,7 @@ foreach ( $title2ids as $title => $ids ) {
 			_m( 'title: '. _imp( $pmids_t ), 'blue' );
 		if ( $pmids_a )
 			_m( 'auth: '. _imp( $pmids_a ), 'green' );
+		_json_save( DN_PREP. '/pubmed_found.json.gz', $data );
 	} else {
 		_m( 'not found' );
 	}
@@ -118,7 +124,7 @@ foreach ( $title2ids as $title => $ids ) {
 	sleep( 2 );
 //	if ( $num == 100 ) break;
 }
-_json_save( DN_PREP. '/pubmed_found.json.gz', $data );
+//_json_save( DN_PREP. '/pubmed_found.json.gz', $data );
 
 
 //. function _pubmed_url

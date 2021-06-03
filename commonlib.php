@@ -878,12 +878,18 @@ function _rsync_dir( $path ) {
 		'if1'  => 'pdbjif1-p' , //- 廃止後に削除
 		'iw1'  => 'pdbjiw1-p' , //- 廃止後に削除
 		'lvh1' => 'pdbjlvh1' ,
+		'lvh2' => 'pdbjif1-p', //'pdbjlvh2' ,
 		'bk1'  => 'pdbjbk1' ,
-	][ $server ] ?: $server ?: 'pdbjif1-p';
+	][ $server ] ?: $server ?: 'pdbjif1-p'; //- lvh2にする予定
 
 	//- if1 削除予定
 	if ( $server == 'pdbjif1-p' )
-		$dn = '/var/PDBj/ftp/pdbj<>/'. $dn;
+		$dn = '/home/archive/ftp/pdbj<>/'. $dn;
+//		$dn = '/var/PDBj/ftp/pdbj<>/'. $dn;
+
+	//- lvh2
+	if ( $server == 'pdbjlvh2' )
+		$dn = '/home/archive/ftp/pdbj<>/'. $dn;
 
 	//- 曜日対応
 	if ( _instr( '<>', $dn ) ) {
@@ -1609,6 +1615,15 @@ function _as_json( $data ) {
 	return $data ? _to_json( $data ) : '';
 }
 
+//.. _kvdb
+function _kvdb( $fn, $key ) {
+	return json_decode( _ezsqlite([
+		'dbname' => $fn ,
+		'select' => $val ,
+		'where'  => [ 'key', $key ] ,
+	]), true );
+}
+
 //. function その他
 //.. _mng_conf: 設定ファイルから読み込み
 function _mng_conf( $categ, $name = '' ) {
@@ -2041,3 +2056,35 @@ class cls_pubmedid_tsv {
 		return;
 	}
 }
+
+//. class cls_kvdb
+class cls_kvdb {
+	protected $obj_db;
+
+	//.. constructror
+	function __construct( $fn_db ) {
+		$this->obj_db = new cls_sqlw([
+			'fn'	=> $fn_db ,
+			'cols'	=> [
+				'key UNIQUE COLLATE NOCASE' ,
+				'val' ,
+			] ,
+			'indexcols' => [ 'key' ],
+			'new'		=> true
+		]);
+	}
+
+	//.. set
+	function set( $key, $val )  {
+		$this->obj_db->set([
+			$key, 
+			json_encode( $val, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ) 
+		]);
+	}
+
+	//.. end
+	function end() {
+		$this->obj_db->end();
+	}
+}
+

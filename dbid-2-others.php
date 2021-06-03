@@ -191,13 +191,13 @@ if ( _flg_do( 'smart' ) ) {
 	_line( 'SMART', 'downloading' );
 	_flg_copy( URL_SMART_TSV, FN_SMART_TSV );
 
-	_line( 'PROSITE', 'conversion' );
+	_line( 'SMART', 'conversion' );
 	$out = [];
 	$data = [];
 	foreach ( _file( FN_SMART_TSV ) as $line ) {
 		list( $domain, $acc, $def, $desc ) = explode( "\t", $line, 4 );
 		if ( ! $acc || $acc == 'ACC' ) continue;
-		$out[ $acc ] = [ $def, $desc ];
+		$out[ $acc ] = [ $domain, $def ?: $domain ];
 	}
 	_comp_save( FN_SMART_JSON, $out );
 	_m( "count: " . count( $out ) );

@@ -37,7 +37,7 @@ $list_tobe_checked = '';
 $json_tobe_checked = [];
 
 //. tsv data
-if ( ! file_exists( $fn = DN_EDIT . '/pubmed_id.tsv' ) ) {
+if ( ! file_exists( $fn = DN_EDIT. '/pubmed_id.tsv' ) ) {
 	_problem( "ファイルがない: $fn" );
 	_end();
 }
@@ -84,7 +84,7 @@ foreach ( TSV_DATA[ 'pdb' ] as $id => $pmid ) {
 }
 
 if ( $count == 0 ) {
-	_m( "全てチェック、問題なし、ホワイトリスト数: " . count( $white_list_used  ) );
+	_m( "全てチェック、問題なし、ホワイトリスト数: ". count( $white_list_used  ) );
 } else {
 	_m( "$count data needed to be checked", -1 );
 	_m( $list_tobe_checked );
@@ -126,11 +126,11 @@ function _out1( $title_xml, $auth_xml ) {
 
 	_m( LINE
 		. "$id-$pmid"
-		. "\n[pubmed] " . $pubmed_json->title
-		. "\n[str-db] " . $title_xml
+		. "\n[pubmed] ". $pubmed_json->title
+		. "\n[str-db] ". $title_xml
 		. "\n"
-		. "\n[pubmed] " . _imp( $pubmed_json->auth )
-		. "\n[str-db] " . _imp( $auth_xml )
+		. "\n[pubmed] ". _imp( $pubmed_json->auth )
+		. "\n[str-db] ". _imp( $auth_xml )
 		. "\n"
 	);
 	_problem( "$id-$pmid: pubmed-ID 要チェック" );

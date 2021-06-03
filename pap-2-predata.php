@@ -15,8 +15,10 @@ $ex_id = [];
 $_data = [];
 $_kw = [];
 
-define( 'FN_PMID_TSV', DN_EDIT. '/pubmed_id.tsv' );
-$pubmed_id_tsv = _tsv_load2( FN_PMID_TSV );
+define( 'FN_PMID_TSV'	, DN_EDIT. '/pubmed_id.tsv' );
+define( 'FN_PAP_TITLE'	, DN_EDIT. '/pap_title.tsv' );
+define( 'PUBMED_ID_TSV'	, _tsv_load2( FN_PMID_TSV ) );
+define( 'PAP_TITLE'		, _tsv_load( FN_PAP_TITLE ) );
 
 //$jn2issn_tsv = (array)_tsv_load( FN_JN2ISSN_TSV );
 //$jn2issn = _json_load( FN_JN2ISSN );
@@ -27,7 +29,7 @@ _line( 'EMDB data' );
 _count();
 
 $flg_pmid_from_tsv = [];
-foreach ( $pubmed_id_tsv[ 'emdb' ] as $id => $val ) {
+foreach ( PUBMED_ID_TSV[ 'emdb' ] as $id => $val ) {
 	if ( ! $val ) continue;
 	$flg_pmid_from_tsv[ $id ] = true;
 	_cnt( 'Pubmed-ID from tsv file' );
@@ -63,6 +65,10 @@ foreach ( _idlist( 'emdb' ) as $id ) {
 	if ( $flg_pmid_from_tsv[ $id ] && $flg_continue )
 		$flg_continue = _newer( $fn_out, FN_PMID_TSV );
 
+	//- タイトルアノテーション
+	if ( PAP_TITLE[ $id ] && $flg_continue )
+		$flg_continue = _newer( $fn_out, FN_PAP_TITLE );
+
 	if ( $flg_continue ) continue;
 
 	//.. main
@@ -76,7 +82,7 @@ foreach ( _idlist( 'emdb' ) as $id ) {
 	_d( 'author'	, _exp( $jnl->authors ?: $dep->authors ) );
 	_d( 'journal'	, $jnl->journal );
 	_d( 'doi'		, $jnl->ref_doi );
-	_d( 'title'		, $jnl->articleTitle );
+	_d( 'title'		, PAP_TITLE[ $id ] ?: $jnl->articleTitle );
 	_d( 'issue'		, _imp( array_filter([
 		_ifnn( $jnl->volume		, 'Vol. \1'		) ,
 		_ifnn( $jnl->issue		, 'Issue \1'	) ,
@@ -146,7 +152,7 @@ $_pdbid2pmid = [
 
 _line( 'PDB tsv由来のpubmed-ID' );
 $flg_pmid_from_tsv = [];
-foreach ( $pubmed_id_tsv[ 'pdb' ] as $id => $val ) {
+foreach ( PUBMED_ID_TSV[ 'pdb' ] as $id => $val ) {
 	if ( $val == '' ) continue;
 	$flg_pmid_from_tsv[ $id ] = true;
 	_cnt( 'Pubmed-ID from tsv file' );
@@ -171,6 +177,10 @@ foreach ( _idloop( 'pdb_json' ) as $fn_json ) {
 	//- tsv由来pubmed-ID
 	if ( $flg_pmid_from_tsv[ $id ] && $flg_continue )
 		$flg_continue = _newer( $fn_out, FN_PMID_TSV );
+
+	//- タイトルアノテーション
+	if ( PAP_TITLE[ $id ] && $flg_continue )
+		$flg_continue = _newer( $fn_out, FN_PAP_TITLE );
 
 	if ( $flg_continue ) continue;
 
@@ -202,7 +212,7 @@ foreach ( _idloop( 'pdb_json' ) as $fn_json ) {
 	_d( 'journal'	, $jnl->journal_abbrev );
 	_d( 'issn'		, $jnl->journal_id_ISSN );
 	_d( 'doi'		, $jnl->pdbx_database_id_DOI );
-	_d( 'title'		, $jnl->title );
+	_d( 'title'		, PAP_TITLE[ $id ] ?: $jnl->title );
 	_d( 'issue'		, _imp( array_filter([
 		_ifnn( $jnl->journal_volume	, 'Vol. \1'		) ,
 		_ifnn( $jnl->journal_issue	, 'Issue \1'	) ,

@@ -28,6 +28,7 @@ $_filenames += [
 
 define( 'URL_UNIPROT_XML', 'http://www.uniprot.org/uniprot/<id>.xml' );
 
+//. func: _db_name2categ
 function _db_name2categ( $name ) {
 	return [
 		'ec' => 'f' ,
@@ -37,6 +38,7 @@ function _db_name2categ( $name ) {
 		'in' => 'h' ,
 		'pr' => 'h' ,
 		'ct' => 'h' ,
+		'sm' => 'h' ,
 	][ $name ] ?: 'c';
 }
 
