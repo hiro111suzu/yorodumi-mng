@@ -3,10 +3,7 @@ addjson を作成
 //. init
 require_once( "commonlib.php" );
 //- pubmed-ID
-$pubmedid_tsv = new cls_pubmedid_tsv(
-	'emdb' ,
-	[ 1920, 1921, 20618 ] //- whitelist: Pubmedid tsvのほうが正解のID
-);
+$o_pubmedid_tsv = new cls_pubmedid_tsv( 'emdb' );
 
 $dif_count = [];
 $sym_only_v1 = [];
@@ -111,7 +108,7 @@ foreach ( _idloop( 'emdb_new_json' ) as $fn ) {
 		'author'	=> array_map( 'trim', $json->admin->author ) ?: $auth_ref ,
 		'met'		=> _met_code( $json->structure_determination[0]->method )
 		,
-		'pmid'		=> $pubmedid_tsv->get(
+		'pmid'		=> $o_pubmedid_tsv->get(
 			$id,
 			$json->crossreferences->primary_citation->journal_citation->ref_PUBMED
 		) ,
@@ -125,7 +122,7 @@ foreach ( _idloop( 'emdb_new_json' ) as $fn ) {
 
 //. end
 _delobs_emdb( 'emdb_add' );
-$pubmedid_tsv->save();
+$o_pubmedid_tsv->save();
 _json_save( DN_PREP. '/sym_only_v1.json', $sym_only_v1 );
 _cnt2();
 _end();
@@ -164,8 +161,5 @@ function _comp_save_test( $fn, $new, $dummy = '' ) {
 
 //ksort( $dif_count );
 //_kvtable( $dif_count );
-
-
-
 
  

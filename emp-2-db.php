@@ -4,8 +4,11 @@ define( 'PATH_XML'		, DN_FDATA. '/empiar/empiar.pdbj.org/pub/empiar/archive/*/*.
 //- EBI: '/ftp.ebi.ac.uk/pub/databases/empiar/archive/*/*.xml'
 //- EBI: ftp://ftp.ebi.ac.uk/pub/databases/empiar/archive/
 
+define( 'FN_ID_TABLE', DN_PREP. '/empiar_id_table.json.gz' );
+
 //. 
 $data = [];
+$empiar_id_2_str_id = [];
 foreach ( glob( PATH_XML ) as $pn ) {
 	_count( 100 );
 	$empiar_id = basename( $pn, '.xml' );
@@ -33,20 +36,25 @@ foreach ( glob( PATH_XML ) as $pn ) {
 	$x = $xml->crossReferences;
 	if ( count( $x ) > 0 ) foreach ( $x->children() as $c ) {
 		foreach ( $c->children() as $key => $val ) {
+			$db = $id = '';
 			if ( $key == 'emdbEntry' ) {
-				_cnt('EMDB');				
-				$val = 'emdb-' . _numonly( $val );
+				_cnt('EMDB');
+				$db = 'emdb';
+				$id = _numonly( $val );
 			} else if ( $key == 'pdbEntry' ) {
 				_cnt('PDB');
-				$val = 'pdb-' . $val;
+				$db = 'emdb';
+				$id = $val;
 			} else {
 				_cnt( $key );
 //				_m( 'unknown key: '. $key );
 				continue;
 			}
 			if ( $val != '' ) {
-				$data[ $val ][] = $empiar_id;
+				$data[ "$db-$id" ][] = $empiar_id;
 //				_m( "$val -- $empiar_id" );
+			if ( $db )
+				$empiar_id_2_str_id[ $empiar_id ][ $db ][] = $id;
 			}
 		}
 	}
@@ -64,9 +72,12 @@ foreach ( $data as $key => $val ) {
 		foreach ( $val as $empiar_id ) {
 			if ( in_array( $empiar_id, (array)$data[ $pdb_id ] ) ) continue;
 			$data[ $pdb_id ][] = $empiar_id;
+			$empiar_id_2_str_id[ $empiar_id ]['pdb'][] = explode( '-', $pdb_id )[1];
 		}
 	}
 }
+
+_json_save( FN_ID_TABLE, $empiar_id_2_str_id );
 
 //. db prep
 $sqlite = new cls_sqlw([

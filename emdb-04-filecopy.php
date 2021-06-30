@@ -10,8 +10,6 @@
 require_once( "commonlib.php" );
 _envset( 'eman' );
 
-define( 'DN_UNZIP_MAP', '/data/unzipped_maps' );
-
 //- agg stateごとの色
 define( 'METCOLOR', [
 	't' => '0.700, 0.700, 0.700, 1.0,' ,
@@ -24,8 +22,10 @@ define( 'METCOLOR', [
 
 _mkdir( DN_PREP . '/fsc_imgs' );
 _mkdir( DN_PREP . '/emdb_dirinfo' );
+
+define( 'DN_UNZIP_MAP', '/data/unzipped_maps' );
 $_filenames += [
-//	'map_souko' => DN_UNZIP_MAP. '/emd_<id>.map' ,
+	'unzipped_map' => DN_UNZIP_MAP. '/emd_<id>.map' ,
 	'fsc_check' => DN_PREP. '/fsc_imgs/<id>.png' ,
 	'dir_info'  => DN_PREP. '/emdb_dirinfo/<id>-<s1>.json' ,
 ];
@@ -71,46 +71,36 @@ foreach( _idlist( 'emdb' ) as $id ) {
 
 	//.. copy map
 	$fn_map_orig  = _fn( 'mapgz', $id );
-	$fn_slink = _fn( 'map', $id );
-
-	$dn_map_souko = DN_UNZIP_MAP
-		. '/'. ( strlen( $id ) < 5 ? 0 : substr( $id, 0, 1 ) )
-	;
-	if ( !is_dir( $dn_map_souko ) )
-		_mkdir( $dn_map_souko );
-	$fn_map_souko = "$dn_map_souko/emd_$id.map";
+	$fn_symlink = _fn( 'map', $id );
+	$fn_unzipped_map = _fn( 'unzipped_map', $id );
 	
 	//- 実体
-
-	$flag = 0;
+	$flag = false;
 	if ( file_exists( $fn_map_orig ) ) {
 		$time_orig = filemtime( $fn_map_orig );
-		if ( ! file_exists( $fn_map_souko ) ) {
-			$flag = 1;
+		if ( ! file_exists( $fn_unzipped_map ) ) {
+			$flag = true;
 			$msg = "$id: new map";
-		} else if ( $time_orig != filemtime( $fn_map_souko ) ) {
-			$flag = 1;
+		} else if ( $time_orig != filemtime( $fn_unzipped_map ) ) {
+			$flag = true;
 			$msg = "$id: changed map";
 		}
 	}
 
 	if ( $flag ) {
 		_log( $msg );
-		$fn_temp_gz = "$fn_map_souko.gz";
-		_del( $fn_map_souko, $fn_temp_gz ); //- 一応消しておく
+		$fn_temp_gz = "$fn_unzipped_map.gz";
+		_del( $fn_unzipped_map, $fn_temp_gz ); //- 一応消しておく
 		copy( $fn_map_orig, $fn_temp_gz );
 		exec( "gunzip $fn_temp_gz" );
-//		rename( $fn_temp, $fn_map_souko );
-//		_del( $fn_temp, $fn_temp_gz ); //- 一応
 		exec( "rm -rf $dn_dest/mapi" );
-		touch( $fn_map_souko, $time_orig );
-		_del( $fn_slink );
-		exec( "rm -f $fn_slink; ln -s $fn_map_souko $fn_slink" ); //- シンボリックリンク
+		touch( $fn_unzipped_map, $time_orig );
+		exec( "ln -fs $fn_unzipped_map $fn_symlink" ); //- シンボリックリンク
 	}
 
 	//.. session ファイル作成
 	$fn_start_session = "$dn_dest/start.py";
-	if ( file_exists( $fn_map_souko ) && ! file_exists( $fn_start_session ) ) {
+	if ( file_exists( $fn_unzipped_map ) && ! file_exists( $fn_start_session ) ) {
 		_m( "セッションファイル作成 proc method: $met" );
 
 		//- threshold

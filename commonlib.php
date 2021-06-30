@@ -672,6 +672,31 @@ function _gnuplot( $cmd ) {
 	exec( "echo \"$cmd\" | gnuplot" );
 }
 
+//.. _gnuplot2
+function _gnuplot2( $in ) {
+	$fn = $set = $curve = null;
+	extract( $in );
+	$cmd = '';
+
+	//- set
+	foreach ( array_merge([
+		'output'	=> "'$fn'" ,
+		'term'		=> "svg font 'Helvetica,14'" ,
+	], $set ) as $key => $val ) {
+		$cmd .= "set $key $val;\n";
+	}
+	
+	//- curve
+	$curve_set = [];
+	foreach ( is_string( $curve ) ? [ $curve ] : $curve as $c ) {
+		$fn = $using = $with = $title = null;
+		extract( $c );
+		$curve_set[] = "'$fn' using $using with $with title '$title'";
+	}
+	$cmd .= 'plot '. implode( ', ', $curve_set );
+	exec( "echo \"$cmd\" | gnuplot" );
+}
+
 //.. _Rrun: R実行
 function _Rrun( $cmd ) {
 	file_put_contents( $fn = _tempfn( 'r' ), $cmd );
@@ -878,7 +903,8 @@ function _rsync_dir( $path ) {
 		'if1'  => 'pdbjif1-p' , //- 廃止後に削除
 		'iw1'  => 'pdbjiw1-p' , //- 廃止後に削除
 		'lvh1' => 'pdbjlvh1' ,
-		'lvh2' => 'pdbjif1-p', //'pdbjlvh2' ,
+//		'lvh2' => 'pdbjif1-p',
+		'lvh2' => 'pdbjlvh2' ,
 		'bk1'  => 'pdbjbk1' ,
 	][ $server ] ?: $server ?: 'pdbjif1-p'; //- lvh2にする予定
 
@@ -1406,7 +1432,7 @@ function _cnt(){
 		++ $_data_cnt[ $val ];
 }
 
-//.. _cnt2: 色々数える
+//.. _cnt2: 色々数える、複数
 $_data_cnt2 = [];
 function _cnt2( $val = '__show', $categ = '' ){
 	global $_data_cnt2;
@@ -1437,12 +1463,12 @@ function _kvtable( $ar, $title = '' ) {
 		if ( is_array( $v ) ) $v = _imp( $v );
 		if ( is_numeric( $v ) ) $v = number_format( $v );
 		_m(
-			ES_BGBLUE . substr( str_repeat( ' ', 100 ) . $k, -3 - $max )
-			.':'.ES_RESET." $v"
+			ES_BGBLUE. substr( str_repeat( ' ', 100 ). $k, -3 - $max )
+			. ':'. ES_RESET. " $v"
 		);
 	}
+	_m( "\n" );
 }
-
 
 //. functions: データエントリ
 //.. id2did
@@ -1993,15 +2019,13 @@ class cls_pubmedid_tsv {
 	//.. コンストラクタ
 	function __construct( $db, $white_list = [] ) {
 		_line( 'Pubmed-ID tsv data' );
-
 		$this->db = $db;
 		if ( ! file_exists( $this->fn ) )
 			_problem( ':ファイルがない: ' . $this->fn );
 		$this->data = _tsv_load2( $this->fn );
-		$this->whitelist  = $white_list;
-
+		$this->whitelist  = explode( ' ', _mng_conf( 'pubmed_id_tsv_white_list', $db ) );
 		_kvtable([
-			'DB' => $this->db ,
+			'DB' => $db ,
 			'whitelist' => _imp( $this->whitelist )
 		], 'tsv data' );
 	}

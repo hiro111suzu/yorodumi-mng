@@ -12,7 +12,6 @@ define( 'DRY_RUN', false );
 //.. PDBMLplus
 _rsync([
 	'title' => 'PDBMLplus' ,
-//	'from'	=> [ 'XML/pdbmlplus/pdbml_add/' ],
 	'from'	=> [ 'XML/pdbmlplus/pdbml_add/', 'lvh2' ] ,
 	'to'	=> DN_FDATA. '/pdbmlplus' ,
 	'dryrun' => DRY_RUN ,
@@ -21,8 +20,13 @@ _rsync([
 //.. PDBML 取得
 _rsync([
 	'title' => 'PDBML no-atom' ,
-//	'from'	=> [ 'XML/all-noatom/' ],
 	'from'	=> [ 'pub/pdb/data/structures/all/XML-noatom/', 'lvh2' ] ,
+/*
+	'from'	=> [ 
+		'/data/pdbj/data-pre/ftp/pub/pdb/data/structures/all/XML-noatom', 
+		'lvh1'
+	] ,
+*/	
 	'to'	=> DN_FDATA. '/pdbml_noatom/' ,
 	'opt'	=> '-L' , //- シンボリックリンクの実体
 	'dryrun' => DRY_RUN ,
@@ -32,7 +36,6 @@ _rsync([
 //- dep
 _rsync([
 	'title' => 'PDB形式 登録構造' ,
-//	'from'	=> [ 'pdb/' ] ,
 	'from'	=> [ 'pub/pdb/data/structures/all/pdb/', 'lvh2' ] ,
 	'to'	=> DN_FDATA. '/pdb/dep/' ,
 	'opt'	=> '-L' , //- シンボリックリンクの実体

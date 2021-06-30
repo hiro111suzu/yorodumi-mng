@@ -6,6 +6,14 @@ require_once( 'marem-common.php' );
 //-
 define( 'FN_FLG_SYNC', DN_PREP. '/marem/sync' );
 if ( file_exists( FN_FLG_SYNC ) ) {
+	_marem_log( 'hwork_sync 開始' );
+	rename( FN_FLG_SYNC, FN_FLG_SYNC. '-doing' );
+	_php( 'marem-hwork-sync' );
+	rename( FN_FLG_SYNC. '-doing', FN_FLG_SYNC. '-done' );
+	_marem_log( 'hwork_sync 終了' );
+}
+/*
+if ( file_exists( FN_FLG_SYNC ) ) {
 	_marem_log( 'sync-map 開始' );
 	rename( FN_FLG_SYNC, FN_FLG_SYNC. '-doing' );
 	passthru( ' ~/sync-map.sh' );
@@ -20,7 +28,7 @@ if ( file_exists( FN_FLG_SYNC2 ) ) {
 	rename( FN_FLG_SYNC2. '-doing', FN_FLG_SYNC2. '-done' );
 	_marem_log( 'hwork_sync 終了' );
 }
-
+*/
 define( 'IDLIST_MOVREC', _json_load( DN_PREP. '/idlist_recmov.json' ) );
 if ( ! IDLIST_MOVREC ) {
 	_marem_log( 'Rec確認 ジョブなし' );
@@ -109,7 +117,10 @@ if ( file_exists( FN_RECORDING) ) {
 touch( FN_RECORDING );
 
 //. エントリごとのループ
-foreach( _idlist( 'emdb' ) as $id ) {
+foreach( array_keys( IDLIST_MOVREC ) as $id ) {
+	if ( _instr( '-', $id ) ) continue;
+	_m( $id );
+
 	if ( file_exists( DN_MAREM_WORK. '/stop' ) ) {
 		_marem_log( 'ストップファイルにより停止' );
 		_m( 'ストップファイルにより停止', 'red' );
@@ -118,6 +129,11 @@ foreach( _idlist( 'emdb' ) as $id ) {
 	if ( ! IDLIST_MOVREC[ $id ] ) continue;
 	_count( 'emdb' );
 	chdir( $dn_ent = _fn( 'emdb_med', $id ) );
+
+	if ( ! file_exists( "emd_$id.map" ) ) {
+		_marem_log( "$id - mapファイルがない" );
+		continue;
+	}
 
 	//- スナップショットの画像番号
 	$num_snap = ANG_NUM[ _mng_conf( 'img_angle', $id ) ] ?: "00000" ;
@@ -183,6 +199,10 @@ foreach( _idlist( 'emdb' ) as $id ) {
 		//.. record
 		_line( "generating movie frames",  "$id - $movid" );
 		_del( $fn_pyc );
+		if ( file_exists( $fn_recording ) ) { //- 念の為
+			_marem_log( "$id-$movid: 別プロセスがこのIDを録画中" );
+			continue;
+		}
 		touch( $fn_recording ); //- 作成中の印
 		_marem_log( "$id-$movid: rec 開始" );
 		_exec( CMD_CHIMERA. $fn_py .' '. $fn_cmd );

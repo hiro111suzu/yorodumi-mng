@@ -34,7 +34,7 @@ gomibako/
 EOD;
 
 foreach ([
-	'if1'  => 'emnavi/data/' ,
+//	'if1'  => 'emnavi/data/' ,
 	'lvh1' => '/data/pdbj/data<>/work/emnavi/data/', 
 	'bk1'  => '/data/pdbj/data<>/work/emnavi/data/', 
 ] as $serv => $dn ){

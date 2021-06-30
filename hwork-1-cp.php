@@ -19,7 +19,7 @@ $_filenames += [
 	'pdb_to'	=> DN_HWORK. '/<id>/<s1>.ent.gz' ,
 	'mmcif_to'	=> DN_HWORK. '/<id>/<s1>.cif.gz' ,
 
-	'map_from'  => '/data/unzipped_maps/<s1>/emd_<id>.map' ,
+	'map_from'  => '/data/unzipped_maps/emd_<id>.map' ,
 	'start_from' => DN_DATA. '/emdb/media/<id>/start.py' ,
 	'fit_from' => DN_DATA. '/emdb/media/<id>/fit.py' ,
 ];
@@ -64,12 +64,9 @@ $emdb_ids = array_unique( $emdb_ids );
 foreach ( $emdb_ids as $id ) {
 	_mkdir( DN_HWORK. "/$id" );
 
-	$num = 0;
-	if ( strlen( $id ) == 5 )
-		$num = substr( $id, 0, 1 );
 	_copy_job( 
 		"$id: map",
-		_fn( 'map_from', $id, $num ),
+		_fn( 'map_from', $id ),
 		_fn( 'map_to', $id )
 	);
 

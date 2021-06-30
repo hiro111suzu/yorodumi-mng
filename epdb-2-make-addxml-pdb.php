@@ -6,47 +6,14 @@ pubmed-id.ini整理
 //. misc init
 require_once( "commonlib.php" );
 
-$resdata = [
-	'1brd' => '3.5',
-	'1upn' => '16',
-	'2bgz' => '12.00',
-	'2c7e' => '9.7',
-	'2i68' => '7.5',
-	'2ix8' => '9.9',
-	'487d' => '7.5'
-];
+$reps = _json_load( DN_PREP. '/split2large.json' ); //- splitのIDも加える
 
-$met_data = [
-	'1foq' => 's' ,
-	'1x18' => 's' , 
-	'2rec' => 'h' , 
-	'3dco' => 's' , 
-	'3epc' => 's' , 
-	'3izk' => 's' ,
-	'3jce' => 's' ,
-	'3jcd' => 's' ,
-	'3j07' => 's' ,
-	'5ijn' => 'a' ,
-	'5ijo' => 'a' ,
-
-	'5j8v' => 's' ,
-	'5j4z' => 's' ,
-	'5j7y' => 's' ,
-	'5j8k' => 's' ,
-];
-
-//- splitのIDも加える
-$reps = _json_load( DN_PREP . '/split2large.json' );
-
-//- pubmed-ID
-$pubmedid_tsv = new cls_pubmedid_tsv( 'pdb', [ '5oyb' ] );
-
+$o_pubmedid_tsv = new cls_pubmedid_tsv('pdb');
 $ids_unknown_method = [];
-
 define( 'FITDB', _json_load( DN_PREP. '/emn/fitdb.json.gz' ) );
 
-_line( 'main loop' );
 //. start main loop
+_line( 'main loop' );
 foreach( _idlist( 'epdb' ) as $id ) {
 	_count( 'epdb' );
 	$did = "pdb-$id";
@@ -60,7 +27,6 @@ foreach( _idlist( 'epdb' ) as $id ) {
 	$data[ 'rdate' ] = $json->pdbx_audit_revision_history[0]->revision_date;
 
 	$data[ 'reso' ] = rtrim( _x(
-		$resdata[ $id ] ?:
 		$json->em_3d_reconstruction[0]->resolution ?:
 		$json->refine[0]->ls_d_res_high ?:
 		$json->reflns[0]->d_resolution_high
@@ -73,16 +39,12 @@ foreach( _idlist( 'epdb' ) as $id ) {
 	$data[ 'author' ] = array_values( $a );
 
 	//.. pubmed-ID
-	$pmid_tsv = $id2pubmedid[ 'pdb' ][ $id ];
-	if ( $pmid_tsv )
-		_m( "$id: $pmid_tsv" );
-
 	$pmid_xml = '';
 	foreach ( (array)$json->citation as $x ) {
 		if ( $x->id != 'primary' ) continue;
 		$pmid_xml = $x->pdbx_database_id_PubMed;
 	}
-	$data[ 'pmid' ] = $pubmedid_tsv->get( $id, $pmid_xml );
+	$data[ 'pmid' ] = $o_pubmedid_tsv->get( $id, $pmid_xml );
 
 	//.. method
 	$met = $json->exptl[0]->method == 'ELECTRON CRYSTALLOGRAPHY'
@@ -91,7 +53,6 @@ foreach( _idlist( 'epdb' ) as $id ) {
 	;
 
 	//... 不明対策
-
 	if ( ! $met ) {
 		//- EMDBのデータを参照
 		foreach ( (array)FITDB[ $did ] as $eid ) {
@@ -107,23 +68,18 @@ foreach( _idlist( 'epdb' ) as $id ) {
 		$recmet	= $json->em_3d_reconstruction[0]->method;
 		$asb	= $json->pdbx_struct_assembly[0]->details;
 
-		if ( $asb == 'complete icosahedral assembly' )
+		if ( $asb == 'complete icosahedral assembly' ) {
 			$met = 'i';
-		else if ( _instr( 'tomograph', $recmet ) )
+		} else if ( _instr( 'tomograph', $recmet ) ) {
 			$met = 't';
-		else if ( _instr( 'single particle', $recmet )
+		} else if ( _instr( 'single particle', $recmet )
 			|| _instr( 'cross-common lines', $recmet )
 			|| _instr( 'projection matching', $recmet )
 			|| _instr( 'spider', $recmet )
-		)
+		) {
 			$met = 's';
-//		else if ( _instr( 'helical', $recmet ))
-//			$met = 'helical';
-		else if ( $asb == 'representative helical assembly' )
+		} else if ( $asb == 'representative helical assembly' ) {
 			$met = 'h';
-		else {
-			//- マニュアル指定
-			$met = $met_data[ $id ];
 		}
 	 }
 
@@ -172,7 +128,7 @@ _delobs_pdb( 'pdb_add' );
 _line( 'データ保存' );
 _comp_save( DN_PREP . '/replacedid.json', $reps );
 
-$pubmedid_tsv->save();
+$o_pubmedid_tsv->save();
 
 //. 手法が不明のエントリ、あれば表示
 if ( count( $ids_unknown_method ) > 0 ) {
@@ -183,5 +139,4 @@ if ( count( $ids_unknown_method ) > 0 ) {
 	foreach ( (array)$nomet_recmet as $n => $v )
 		echo "$n \t: $v\n";
 }
-
 _end();

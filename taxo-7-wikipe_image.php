@@ -5,10 +5,14 @@ require_once( 'taxo-common.php' );
 //https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Streptococcus_pneumoniae.jpg/150px-Streptococcus_pneumoniae.jpg
 _mkdir( DN_DATA. "/taxo/wicon" );
 
-foreach ( _tsv_load2( FN_TAXO_ANNOT )[ 'wikipe_img' ] as $name ) {
+foreach ( _tsv_load2( FN_TAXO_ANNOT )[ 'wikipe_img' ] as $taxo => $name ) {
 	$bname = preg_replace( '/.+\//', '', $name );
 	$fn_out = DN_DATA. "/taxo/wicon/$bname";
-	if ( file_exists( $fn_out ) ) continue;
+	_m( $taxo );
+	if ( file_exists( $fn_out ) ) {
+		_m( 'ok' );
+		continue;
+	}
 	$url = ''
 		. 'https://upload.wikimedia.org/wikipedia/commons/thumb/'
 		. $name

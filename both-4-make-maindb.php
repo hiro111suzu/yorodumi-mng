@@ -4,7 +4,11 @@
 
 //. init
 require_once( "commonlib.php" );
+//define( 'MODE_DB', 'MODE' ); //- 片方しかやらない場合、emdbとかにする
+define( 'MODE_DB', null );
+define( 'DO_MAKE_DB', true ); //- テストのときは falseにする
 define( 'DN', DN_PREP. '/maindbjson' );
+
 /*
 define( 'STRID2DBID', [
 	'emdb' => _json_load( FN_DBDATA_EMDB ) ,
@@ -53,7 +57,6 @@ foreach ( _tsv_load2( DN_EDIT. '/data_rep.tsv', true ) as $categ => $c ) {
 define( 'DATA_REP', $a );
 //_pause( DATA_REP );
 
-
 //.. 国 country
 $a = [];
 foreach ( _file( DN_EDIT. '/country_names.txt' ) as $c )
@@ -62,85 +65,91 @@ define( 'COUNTRY_NAMES', $a );
 //_pause( COUNTRY_NAMES );
 
 //. main loop
-
+$o_empty = new stdClass;
 $data_count = [];
-foreach ( _joblist() as $job ) {
+foreach ( _joblist( MODE_DB ) as $job ) {
 	_count( 500 );
 	extract( $job ); //- $db, $id,  $did
+	if ( $id == '0144' ) continue;
 
 	//.. ファイル名 loadfile
-	$json = _json_load2([ $db == 'emdb' ? 'emdb_old_json' : 'epdb_json', $id ]);
-	$add  = _json_load2([ $db == 'emdb' ? 'emdb_add'  : 'pdb_add' , $id ]);
-	$pmid = $add->pmid;
+	if ( $db == 'emdb' ) {
+		$emdb_old_json  = _json_load2([ 'emdb_old_json', $id ]);
+		$emdb_json3 = _emdb_json3_rep( _json_load2([ 'emdb_json3', $id ]) );
+		$pdb_json   = $o_empty;
+	} else {
+		$emdb_old_json  = $o_empty;
+		$emdb_json3 = $o_empty;
+		$pdb_json   = _json_load2([ 'epdb_json', $id ]);
+	}
+	$add  = _json_load2([ $db. '_add', $id ]);
+	$pubmed_id = $add->pmid;
 
 	//.. data
 	$data = [];
 
-	//... entry
+	//.. data - entry
 	_data( 'db_id' 		, $did );
 	_data( 'database'	, strtoupper( $db ) );
 	_data( 'id' 		, $id );
-	_data( 'proc_site'	, _x( $json->deposition->processingSite )
-						. _x( $json->pdbx_database_status[0]->process_site ) );
+	_data( 'empiar'		, implode( '|', (array)json_decode( _ezsqlite([
+		'dbname' => 'empiar' ,
+		'select' => 'data' ,
+		'where'  => [ 'id', $did ] ,
+	]), true ) ) );
 
 	_data( 'method' 	, $add->met );
 	_data( 'release'	, $add->rdate );
 	_data( 'submit'		, $add->ddate );
 	_data( 'submit_year' , substr( $add->ddate, 0, 4 ) );
 	_data( 'authors'	, implode( '|', $add->author ) );
-	_data( 'title'		, _x( $json->deposition->title ?: $json->sample->name
-							?: $json->struct[0]->title ) );
-	_data( 'kw' 		, $json->deposition->keywords. $json->struct_keywords[0]->text );
 
-	//- update
-	$u = '';
-	$z = [ '' ];
-	foreach( (array)$json->pdbx_audit_revision_history as $v ) {
-		$z[] = (string)$v->revision_date;
+	if ( $db == 'emdb') {
+		_data( 'proc_site'	, $emdb_json3->admin->current_status->processing_site );
+		_data( 'title'		, $emdb_json3->admin->title );
+		$udate = $emdb_json3->admin->current_status->date;
+	} else {
+		_data( 'proc_site'	, $pdb_json->pdbx_database_status[0]->process_site  );
+		_data( 'title'		, $pdb_json->struct[0]->title );
+		$d = [];
+		foreach( (array)$pdb_json->pdbx_audit_revision_history as $v )
+			$d[] = $v->revision_date;
+		$udate = max( $d );
 	}
-	_data( 'udate', 
-		max( $z ) ?:
-		$json->admin->lastUpdate ?:
-		$add->rdate
-	);
+	_data( 'udate', $udate ?: $add->rdate ); //- update 最新の日付
 
-	//...  aritlce
-	_data( 'pmid', $pmid );
-	$pmjson = _json_load2([ 'pubmed_json', $pmid ]);
-
-	$pricite = [];
-	if ( $db == 'pdb' ) {
-		foreach ( $json->citation as $c ) {
+	//.. data - aritlce
+	_data( 'pmid', $pubmed_id );
+	$pubmed_json = _json_load2([ 'pubmed_json', $pubmed_id ]);
+	if ( $pubmed_json ) {
+		_data( 'journal', $pubmed_json->journal );
+		_data( 'country', $pubmed_json->affi->auth1 );
+	} else if ( $db == 'pdb' ) {
+		//- PDB
+		foreach ( (array)$pdb_json->citation as $c ) {
 			if ( $c->id != 'primary' ) continue;
-			$pricite = $c;
-			$pmid = $c->pdbx_database_id_PubMed;
+			_data( 'journal', $c->journal_abbrev );
 			break;
 		}
 	} else {
-		$pricite = $json->deposition->primaryReference;
+		//- EMDB
+		$j = $emdb_json3->crossreferences->primary_citation->journal_citation;
+		_data( 'journal', $j->journal ?: $j->journal_abbreviation );
 	}
 
-	if ( $pmjson == '' ) {
-		_data( 'journal', $pricite->journalArticle->journal. $pricite->journal_abbrev );
-	} else {
-		_data( 'journal', $pmjson->journal );
-
-		//- 国
-		_data( 'country', $pmjson->affi->auth1 );
-	}
-
-	//...  sample
-	$j = $json->em_entity_assembly_molwt[0];
-	$molw = ( $json->sample->molWtExp ?: $json->sample->molWtTheo )
+	//..  data - sample
+	$j = $pdb_json->em_entity_assembly_molwt[0];
+	$molw = ( $emdb_old_json->sample->molWtExp ?: $emdb_old_json->sample->molWtTheo )
 		. ( $j->units == 'MEGADALTONS' ? $j->value : '' )
 	;
-	_data( 'olig_state'	, $json->sample->compDegree  );
+	_data( 'olig_state'	, $emdb_old_json->sample->compDegree  );
 
 	_data( 'molw'		, $molw );
 
 	_data( 'agg_state'	,
-		$json->experiment->specimenPreparation->specimenState
-		. $json->em_experiment[0]->aggregation_state
+		$emdb_old_json->experiment->specimenPreparation->specimenState
+		?:
+		$pdbj_json->em_experiment[0]->aggregation_state
 	);
 	$seg = '';
 	if ( $molw > 0 ) foreach ([
@@ -156,10 +165,10 @@ foreach ( _joblist() as $job ) {
 	}
 	_data( 'molw_seg', $seg );
 
-	//... component / taxo
+	//.. data - component / taxo
 	$compo = $spec = [];
-	//- emdb
-	foreach ( (array)$json->sample->sampleComponent as $key1 => $val1 ) {
+	//... emdb
+	foreach ( (array)$emdb_old_json->sample->sampleComponent as $key1 => $val1 ) {
 		if ( ! is_object( $val1 ) ) continue;
 		$compo[] = $val1->entry;
 		foreach ( $val1 as $key2 => $val2 ) {
@@ -167,55 +176,58 @@ foreach ( _joblist() as $job ) {
 		}
 	}
 
-//	if ( $id == 22221 )	_pause( $spec );
-
-	//- pdb
-	foreach ( (array)$json->em_entity_assembly as $c )
+	//... pdb
+	foreach ( (array)$pdb_json->em_entity_assembly as $c )
 		$compo[] = $c->type;
-	foreach ( (array)$json->entity_src_nat as $c )
+	foreach ( (array)$pdb_json->entity_src_nat as $c )
 		$spec[] = $c->pdbx_organism_scientific;
-	foreach ( (array)$json->entity_src_gen as $c )
+	foreach ( (array)$pdb_json->entity_src_gen as $c )
 		$spec[] = $c->pdbx_gene_src_scientific_name;
-	foreach ( (array)$json->pdbx_entity_src_syn as $c )
+	foreach ( (array)$pdb_json->pdbx_entity_src_syn as $c )
 		$spec[] = $c->organism_scientific;
 
+	//... まとめ
 	sort( $compo );
 	sort( $spec );
 	_data( 'compo', _uniq_implode( $compo ) );
 	_data( 'spec' , _uniq_implode( $spec  ) );
 
-//	if ( $id == 22221 )	_pause( $data[ 'spec' ] );
+	//.. data - Experiment
+	$temprt = 0;
+	if ( $db == 'emdb' ) {
+		//... emdb
+		$e_em = $emdb_json3->structure_determination[0]->microscopy[0];
+		$e_vit = $emdb_json3->structure_determination[0]->preparation[0]->vitrification;
+		$temprt = $e_em->temperature->temperature_average
+			?: ( $e_em->temperature_min + $e_em->temperature_max ) /2
+		;
+		_data( 'cryogen_name'	, $e_vit->cryogen_name );
+		_data( 'inst_vitr'		, $e_vit->instrument );
+		_data( 'spec_holder'	, $e_em->specimen_holder_model );
+		_data( 'spec_temp'		, $temprt ? (float)$temprt : null );
+		_data( 'microscope'		, $e_em->microscope );
+		_data( 'elec_source'	, $e_em->electron_source );
+		_data( 'acc_vol'		, $e_em->acceleration_voltage );
+		_data( 'detector'		, $e_em->image_recording[0]->film_or_detector_model );
+	} else {
+		//... PDB
+		$p_img = $pdb_json->em_imaging[0];
+		$p_vit = $pdb_json->em_vitrification[0];
+		$temprt = $p_img->temperature;
+		_data( 'cryogen_name'	, $p_vit->cryogen_name );
+		_data( 'inst_vitr'		, $p_vit->instrument );
+		_data( 'spec_holder'	, $p_img->specimen_holder_type );
+		_data( 'spec_temp'		, $temprt ? (float)$temprt : null );
+		_data( 'microscope'		, $p_img->microscope_model ?: $pdb_json->diffrn_source[0]->type );
+		_data( 'elec_source'	, $p_img->electron_source );
+		_data( 'acc_vol'		, $p_img->accelerating_voltage );
+		_data( 'detector'		, $pdb_json->em_image_recording[0]->film_or_detector_model );
+	}
 
-
-	//... Experiment
-	$eimg = $json->experiment->imaging[0];
-	$evit = $json->experiment->vitrification[0];
-	$pimg = $json->em_imaging[0];
-	$pvit = $json->em_vitrification[0];
-
-	$tmpr = $eimg->temperature ?:
-		$pimg->temperature ?:
-		( $eimg->temperatureMin + $eimg->temperatureMin ) /2
-	;
-	$tmpr = preg_replace( '/\.0+$/', '', $tmpr );
-
-	_data( 'cryogen_name'	, $evit->cryogenName	. $pvit->cryogen_name );
-	_data( 'inst_vitr'		, $evit->instrument		. $pvit->instrument );
-	_data( 'spec_holder'	, $eimg->specimenHolder	. $pimg->specimen_holder_type );
-	_data( 'spec_temp'		, $tmpr );
-	_data( 'microscope'		, $pimg->microscope_model ?: $eimg->microscope ?:
-								$json->diffrn_source[0]->type );
-	_data( 'elec_source'	, $eimg->electronSource	. $pimg->electron_source );
-	_data( 'acc_vol'		, $eimg->acceleratingVoltage. $pimg->accelerating_voltage );
-
-	_data( 'detector'		, $eimg->detector. $json->em_image_recording[0]->film_or_detector_model );
-
-
-	//- 試料温度セグメント
-	$seg = 2;
-	$int = 2;
-	if ( $tmpr  > 0 ) while ( 1 ) {
-		if ( $tmpr < $int ) {
+	//... 試料温度セグメント
+	$seg = $int = 2;
+	if ( 0 < $temprt ) while ( 1 ) {
+		if ( $temprt < $int ) {
 			_data( 'temp_seg', $int );
 			break;
 		}
@@ -223,45 +235,47 @@ foreach ( _joblist() as $job ) {
 		$int = round( $seg );
 	}
 
-	//... Processing
-	$erec = $json->processing->reconstruction[0];
-	$prec = $json->em_3d_reconstruction[0];
-	$reso = $add->reso;
-
+	//.. data Processing
 	_data( 'resolution'		, $add->reso );
-	_data( 'reso_method'	, $erec->resolutionMethod	. $prec->resolution_method );
-	_data( 'ctf_corr' 		, $erec->ctfCorrection		. $prec->ctf_correction_method );
-	_data( 'rec_algo'		, $erec->algorithm 			. $prec->method );
-	_data( 'rec_soft'		, $erec->software			. _imp( $prec->software ) );
-	
-	$i = [];
-	$s = [];
-	
-	//- fitting
 	if ( $db == 'emdb' ) {
-		foreach ( (array)$json->experiment->fitting as $c1 ) {
+		$e_rec = $emdb_old_json->processing->reconstruction[0];
+		_data( 'reso_method', $e_rec->resolutionMethod );
+		_data( 'ctf_corr' 	, $e_rec->ctfCorrection );
+		_data( 'rec_algo'	, $e_rec->algorithm );
+		_data( 'rec_soft'	, $e_rec->software );
+	} else {
+		$p_rec = $pdb_json->em_3d_reconstruction[0];
+		_data( 'reso_method', $p_rec->resolution_method );
+		_data( 'ctf_corr' 	, $p_rec->ctf_correction_method );
+		_data( 'rec_algo'	, $p_rec->method );
+		_data( 'rec_soft'	, _imp( $p_rec->software ) );
+	}
+	
+	//... fitting
+	$i = $s = [];
+	if ( $db == 'emdb' ) {
+		foreach ( (array)$emdb_old_json->experiment->fitting as $c1 ) {
 			if ( is_array( $c1->pdbEntryId ) )
 				$i = array_merge( $i, $c1->pdbEntryId );
 			$s[] = _x( $c1->software );
 		}
-		$j = $json->deposition->fittedPDBEntryId;
+		$j = $emdb_old_json->deposition->fittedPDBEntryId;
 		if ( $j != '' )
 			$i = array_merge( $i, $j );
 
 	} else {
-		foreach ( (array)$json->em_3d_fitting as $c1 )
+		foreach ( (array)$pdb_json->em_3d_fitting as $c1 )
 			$s[] = _x( $c1->software_name );
-		foreach ( (array)$json->em_3d_fitting_List as $c1 )
+		foreach ( (array)$pdb_json->em_3d_fitting_List as $c1 )
 			$i[] = $c1->pdb_entry_id;
 	}
 	_data( 'fit_pdbid',  _uniq_implode( $i ) );
 	_data( 'fit_soft' ,  _uniq_implode( $s ) );
 
-	//- resolution segment
-	$seg = 2;
-	$int = 2;
-	if ( $reso > 0 ) while ( 1 ) {
-		if ( $reso < $int ) {
+	//... resolution segment
+	$seg = $int = 2;
+	if ( 0 < $add->reso ) while ( 1 ) {
+		if ( $add->reso < $int ) {
 			_data( 'reso_seg', $int );
 			break;
 		}
@@ -269,12 +283,13 @@ foreach ( _joblist() as $job ) {
 		$int = round( $seg );
 	}
 
-	//... seach_words
+	//.. data - seach_words
 	//- 空白で挟んで単語検索できるようにする
 	$_vals = [];
-	_json_vals( $json );
+	_json_vals( $emdb_old_json );
+	_json_vals( $pdb_json );
 	_json_vals( $add  );
-	_json_vals( $pmjson );
+	_json_vals( $pubmed_json );
 	
 	//- dbidデータを追加
 	$_vals = array_merge(
@@ -293,10 +308,10 @@ foreach ( _joblist() as $job ) {
 
 	_data( 'search_words', implode( ' | ' , array_unique( $_vals ) ) );
 
-	//... search_authors
+	//.. data - search_authors
 	_data( 'search_authors', implode( ' | ', _uniqfilt( array_map( 'strtolower',
 		array_merge(
-			(array)$pmjson->auth ,
+			(array)$pubmed_json->auth ,
 			(array)$add->author , 
 			(array)$add->sauthor
 		)
@@ -306,6 +321,7 @@ foreach ( _joblist() as $job ) {
 	_comp_save( _fn( 'maindb_json', $did ), $data, 'nomsg' );
 //	_pause( "$id" );
 }
+_cnt2();
 
 //. 取り消しデータを削除
 $ex = [];
@@ -340,8 +356,10 @@ _m( implode( "\n", array_unique( $non_countries ) ) );
 
 //. end
 _end();
-_php( 'both-sub4-maindbload' );
-_php( 'both-sub5-latest-ent' );
+if ( DO_MAKE_DB ) {
+	_php( 'both-sub4-maindbload' );
+	_php( 'both-sub5-latest-ent' );
+}
 
 //. function
 //.. data
@@ -352,7 +370,7 @@ function _data( $key, $val, $type = 'str' ) {
 	extract( (array)TABLE_DATA[ $key ] );
 
 	if ( is_array( $val ) )
-		_pause( "aray: $key" );	
+//		_pause( "aray: $key". _imp( $val ) );
 	$val = strtr( $val, [ '"' => '""' ] );
 
 	//- 検索用カラムじゃなかったら、改行とかを消す
@@ -424,7 +442,7 @@ function _uniq_implode( $ar ) {
 //.. _json_vals:
 function _json_vals( $j ) {
 	global $_vals;
-	if ( $j == '' ) return;
+	if ( ! $j ) return;
 	foreach ( $j as $k => $v ) {
 		if ( is_array( $v ) or is_object( $v ) ) {
 			_json_vals( $v );
@@ -436,4 +454,3 @@ function _json_vals( $j ) {
 		}
 	}
 }
-

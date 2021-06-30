@@ -5,7 +5,7 @@ define( 'FN_RECORDING'  , DN_MAREM_WORK. '/recording' );
 define( 'FN_MAREM_STOP' ,  DN_MAREM_WORK. '/stop' );
 define( 'FN_MINUTELY_LIVING', DN_MAREM_WORK. '/living' );
 
-_m( FN_RECORDING );
+//_m( FN_RECORDING );
 define( 'FN_MAREM_LOG',
 	DN_MAREM_WORK. '/log/'
 	. date( 'Y-m-d' )
@@ -15,6 +15,7 @@ define( 'FN_MAREM_LOG',
 );
 
 //. func
+//.. _marem_log
 function _marem_log( $in ) {
 	_m( "marem-log: $in" );
 	file_put_contents(
@@ -22,4 +23,12 @@ function _marem_log( $in ) {
 		date( 'H:i:s' ). "\t". $in. "\n",
 		FILE_APPEND
 	);
+}
+
+//.. _only_marem
+function _only_marem() {
+	if ( gethostname() != 'marem' ) {
+		_m( 'marem専用のスクリプト', -1 );
+		_die();
+	}
 }

@@ -1,6 +1,8 @@
 <?php
-define( 'FLG', $argv[1] );
+//define( 'FLG', $argv[1] );
 require_once( "commonlib.php" );
+_m( (float)"4.0" );
+/*
 $tsv = _tsv_load2( DN_EDIT. '/chem_annot.tsv' );
 $chem_ignroe = [];
 foreach ( $tsv['dbid_ignore'] as $key => $dummy ) {
