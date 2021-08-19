@@ -6,6 +6,7 @@ define( 'URL_SRC', 'http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db
 define( 'TODAY', date( 'Y-m-d', time() - 90 * 3600 * 24 ) ); //- 90日
 define( 'TSVDATA', _tsv_load2( DN_EDIT. '/pubmed_id.tsv' ) );
 define( 'PAP_TITLE', _tsv_load( DN_EDIT. '/pap_title.tsv' ) );
+define( 'FN_OUTPUT', DN_PREP. '/pubmed/pubmed_found.json.gz' );
 
 //. blacklist
 $ign_id = array_fill_keys([
@@ -33,7 +34,6 @@ $ign_title = array_change_key_case( array_fill_keys([
 ], true ));
 
 //. ID一覧取得
-
 $num = 0;
 
 //. 全取得
@@ -115,7 +115,7 @@ foreach ( $title2ids as $title => $ids ) {
 			_m( 'title: '. _imp( $pmids_t ), 'blue' );
 		if ( $pmids_a )
 			_m( 'auth: '. _imp( $pmids_a ), 'green' );
-		_json_save( DN_PREP. '/pubmed_found.json.gz', $data );
+		_json_save( FN_OUTPUT, $data );
 	} else {
 		_m( 'not found' );
 	}
@@ -124,8 +124,6 @@ foreach ( $title2ids as $title => $ids ) {
 	sleep( 2 );
 //	if ( $num == 100 ) break;
 }
-//_json_save( DN_PREP. '/pubmed_found.json.gz', $data );
-
 
 //. function _pubmed_url
 function _pubmed_url( $str ) {

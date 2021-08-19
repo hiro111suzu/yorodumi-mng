@@ -32,7 +32,7 @@ foreach ( _idloop( 'emdb_new_json' ) as $fn ) {
 		if ( ! $sym1 )
 			_cnt( 'sym1 empty' );
 		else if ( ! $sym3 ) 
-			_cnt( 'sym1 empty' );
+			_cnt( 'sym3 empty' );
 		else
 			_cnt( 'diff' );
 //		if ( ! $sym1 && ! $sym3 )

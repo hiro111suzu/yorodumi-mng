@@ -6,17 +6,16 @@
 //. init
 require_once( "pap-common.php" );
 
-define( 'FN_NGIDS',     DN_PREP. '/pap/ng_papids.txt' );
+define( 'FN_NGIDS',     DN_PREP. '/emn/ng_papids.txt' );
 define( 'FN_EM_PAPERS', DN_DATA. '/emn/empapers.json' );
+define( 'URL_PAPIDS_MAINSV', 'https://pdbj.org/emnavi/data/emn/empapers.json' );
 
 //. 先週版取得
 
 if ( in_array( _youbi(), [ '土', '日', '月', '火' ] ) ) {
 	_line( '公開データからNG-ID取得' );
 	$ids = [];
-	foreach ( json_decode(
-		file_get_contents( 'https://pdbj.org/emnavi/data/emn/empapers.json' )
-	)  as $j )
+	foreach ( json_decode( file_get_contents( URL_PAPIDS_MAINSV ) )  as $j )
 		$ids[] = $j->pmid;
 	if ( ! $ids ) {
 		_problem( '取得失敗' );
@@ -29,7 +28,7 @@ if ( in_array( _youbi(), [ '土', '日', '月', '火' ] ) ) {
 		} else {
 			$ngids = array_merge( $ids, $ngids  );
 			sort( $ngids );
-			_save( FN_NGIDS, array_slice( $ngids, -50 ) );
+			_save( FN_NGIDS, array_slice( $ngids, -200 ) );
 			_m( 'マージ完了' );
 		}
 	}

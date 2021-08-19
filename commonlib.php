@@ -827,9 +827,9 @@ function _rsync( $p ) {
 	if ( $copylink )
 		$opt .= ' --copy-links';
 	if ( $exclude ) {
-		$fn = _tempfn( 'txt' );
-		file_put_contents( $fn, $exclude );
-		$opt .= " --exclude-from=$fn";
+		$fn_exclude = _tempfn( 'txt' );
+		file_put_contents( $fn_exclude, $exclude );
+		$opt .= " --exclude-from=$fn_exclude";
 	}
 
 	//- ログファイル名
@@ -856,11 +856,13 @@ function _rsync( $p ) {
 
 	if ( NORSYNC ) {
 		_m( 'no rsync mode: rsync cancelled', 'green' );
+		_del( $fn_templog );
+		_del( $fn_exclude );
 		return;
 	}
 
 	passthru( $l );
-	
+
 	//- log
 	$logfn = DN_PREP . '/rsync-log/log-' . date( 'Y-m-d' ) . '.txt';
 	$log = file_get_contents( $fn_templog );
@@ -889,6 +891,8 @@ function _rsync( $p ) {
 		_m( 'rsync完了 - 変更なし', 'blue' );
 	}
 	_del( $fn_templog );
+	_del( $fn_exclude );
+
 }
 
 //... _rsync_dir: kf1のディレクトリアドレス
@@ -916,6 +920,10 @@ function _rsync_dir( $path ) {
 	//- lvh2
 	if ( $server == 'pdbjlvh2' )
 		$dn = '/home/archive/ftp/pdbj<>/'. $dn;
+
+	//- lvh1
+//	if ( $server == 'pdbjlvh1' )
+//		$dn = '/data/pdbj/data<>/ftp/pub/pdb/data/structures/all/'. $dn;
 
 	//- 曜日対応
 	if ( _instr( '<>', $dn ) ) {

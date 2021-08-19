@@ -70,7 +70,6 @@ $data_count = [];
 foreach ( _joblist( MODE_DB ) as $job ) {
 	_count( 500 );
 	extract( $job ); //- $db, $id,  $did
-	if ( $id == '0144' ) continue;
 
 	//.. ファイル名 loadfile
 	if ( $db == 'emdb' ) {

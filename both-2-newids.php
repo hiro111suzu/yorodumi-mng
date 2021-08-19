@@ -3,6 +3,7 @@ new ID list をダウンロード
 出力: data/emn/newdata.json , data/emn/latestdata.json
 
 <?php
+die('実行停止');
 //- samlldbを作成
 //. init
 require_once( "commonlib.php" );

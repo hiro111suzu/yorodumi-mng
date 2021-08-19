@@ -381,6 +381,7 @@ $flg = _comp_save( FN_PMID2DID, $pmid2did );
 //_json_save( DN_DATA . '/pmid2did_small.json.gz', $pmid2did_small );
 
 //.. sqlite形式データ書き込み
+/*
 if ( $flg ) {
 	_line( 'pmid2did sqlite形式データ作成' );
 	$sqlite = new cls_sqlw([
@@ -400,7 +401,7 @@ if ( $flg ) {
 	}
 	$sqlite->end();
 }
-
+*/
 //.. sqlite形式データ書き込み
 if ( $flg || true ) {
 	_line( 'pmid sqlite形式データ作成' );
@@ -474,9 +475,8 @@ function _sv( $fn ) {
 	global $_data, $did, $did2pmid;//, $jn2issn_tsv, $jn2issn;
 
 	//- pubmedIDがない場合は、適当な文字列のMD5ハッシュをタイトルとする
-	if ( $_data[ 'pmid' ] == '' ) {
+	if ( ! $_data[ 'pmid' ] )
 		$_data[ 'pmid' ] = _paper_id( $_data[ 'title' ], $_data[ 'journal' ] );
-	}
 
 	_json_save( $fn, $_data );
 	$did2pmid[ $did ] = $_data[ 'pmid' ];
@@ -534,3 +534,18 @@ function _page( $p1, $p2 ) {
 	$p = implode( '-', _uniqfilt([ $p1, $p2 ]) );
 	return $p ? "Page $p" : ''; 
 }
+
+//.. _paper_id: pubmed-idの代わりのIDを作る
+function _paper_id( $title, $journal ) {
+	return $title . $journal == ''
+			|| strtolower( $title ) == 'to be published'
+			|| strtolower( $title ) == 'suppressed'
+			|| strtolower( $journal ) == 'suppressed'
+		? ''
+		: '_' . md5(
+			$title .'|'
+			. preg_replace( '/[^a-z]/', '', strtolower( $journal ) )
+		)
+	;
+}
+

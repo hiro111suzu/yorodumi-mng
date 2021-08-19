@@ -95,7 +95,7 @@ tags.txt
 EOD;
 
 foreach ([
-	'iw1'	=> '/home/web/html/emnavi/' ,
+//	'iw1'	=> '/home/web/html/emnavi/' ,
 	'lvh1'	=> '/home/web/sites/pdbj.org/emnavi/' ,
 	'bk1'	=> '/home/web/sites/pdbj.org/emnavi/' ,
 ] as $serv => $dn ) {

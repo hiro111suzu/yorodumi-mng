@@ -10,7 +10,10 @@ $_filenames += [
 
 //. main
 foreach ( _idloop( 'emdb_obs' ) as $fn ) {
-	$id = _numonly( basename( $fn ) );
+	$bn = basename( $fn );
+	if ( _instr( '-v', $bn ) ) continue;
+	$id = _numonly( $bn );
+	_m( basename( $fn ). ' -> '. $id );
 	$xml = simplexml_load_file( $fn );
 
 	//- author

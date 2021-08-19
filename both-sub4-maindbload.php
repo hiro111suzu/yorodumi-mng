@@ -4,6 +4,7 @@
 //. misc. init
 require_once( "commonlib.php" );
 define( 'ID2CATEG', _json_load( DN_DATA. '/emn/id2categ.json' ) );
+define( 'DID2PMID', _json_load( DN_PREP. '/pap/did2pmid.json.gz' ) );
 
 //.. DBカラム情報準備
 $tabledata = _json_load( DN_DATA. "/emn/tabledata.json" );
@@ -33,14 +34,6 @@ $sqlite = new cls_sqlw([
 ]);
 
 //.. latest
-/*
-$latest = [];
-$json = _json_load( DN_DATA. '/emn/latestdata.json' );
-foreach ( $json[ 'newstr' ] as $id )
-	$latest[ $id ] = 1;
-foreach ( $json[ 'upd' ] as $id )
-	$latest[ $id ] = 2;
-*/
 //. main loop
 $ex = [];
 //$dbtime = 0;
@@ -54,13 +47,14 @@ foreach ( _idloop( 'maindb_json' ) as $fn ) {
 	$auth = array_filter( explode( '|', strtolower( $j->authors ) ) );
 	sort( $auth );
 	foreach ( $colnames as $c ) {
-		$v[] = $c == 'categ'
-			? ID2CATEG[ $j->id ]
-			: ( $c == 'sort_sub'
-				? $j->pmid ?: '000'. implode( '|', $auth )
-				: $j->$c
-			)
-		;
+		if ( $c == 'categ' )
+			$v[] = ID2CATEG[ $j->id ];
+		else if ( $c == 'sort_sub' )
+			$v[] = $j->pmid ?:
+				'00'. ( DID2PMID[ $j->db_id ] ?: implode( '|', $auth ) )
+			;
+		else 
+			$v[] = $j->$c;
 	}
 
 	$sqlite->set( $v );

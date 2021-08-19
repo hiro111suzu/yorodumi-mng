@@ -4,8 +4,9 @@ rsyncでPDB各種ファイル取得
 <?php
 require_once( "commonlib.php" );
 define( 'RD', 'rsyncでダウンロード' );
-define( 'LVH2_DIR', '/home/archive/ftp/pdbj<>/pub/pdb/data/structures/all' );
-
+define( 'LVH1_PDB', '/data/pdbj/data<>/ftp/pub/pdb/' );
+define( 'LVH1_ALL', '/data/pdbj/data<>/ftp/pub/pdb/data/structures/all/' );
+					 
 define( 'DRY_RUN', false );
 
 //. rsync
@@ -20,13 +21,7 @@ _rsync([
 //.. PDBML 取得
 _rsync([
 	'title' => 'PDBML no-atom' ,
-	'from'	=> [ 'pub/pdb/data/structures/all/XML-noatom/', 'lvh2' ] ,
-/*
-	'from'	=> [ 
-		'/data/pdbj/data-pre/ftp/pub/pdb/data/structures/all/XML-noatom', 
-		'lvh1'
-	] ,
-*/	
+	'from'	=> [ LVH1_ALL. 'XML-noatom/', 'lvh1' ] ,
 	'to'	=> DN_FDATA. '/pdbml_noatom/' ,
 	'opt'	=> '-L' , //- シンボリックリンクの実体
 	'dryrun' => DRY_RUN ,
@@ -36,7 +31,7 @@ _rsync([
 //- dep
 _rsync([
 	'title' => 'PDB形式 登録構造' ,
-	'from'	=> [ 'pub/pdb/data/structures/all/pdb/', 'lvh2' ] ,
+	'from'	=> [ LVH1_ALL. 'pdb/', 'lvh1' ] ,
 	'to'	=> DN_FDATA. '/pdb/dep/' ,
 	'opt'	=> '-L' , //- シンボリックリンクの実体
 	'dryrun' => DRY_RUN ,
@@ -45,7 +40,7 @@ _rsync([
 //- biounit
 _rsync([
 	'title' => 'PDB形式 集合体',
-	'from'	=> [ 'pub/pdb/data/biounit/coordinates/all/','lvh2' ],
+	'from'	=> [ LVH1_PDB. 'data/biounit/coordinates/all/', 'lvh1' ] ,
 	'to'	=> DN_FDATA. '/pdb/asb/' ,
 	'opt'	=> '-L' , //- シンボリックリンクの実体
 	'dryrun' => DRY_RUN ,
@@ -54,38 +49,16 @@ _rsync([
 //.. mmcif形式
 _rsync([
 	'title' => 'mmCIF形式',
-	'from'	=> [ 'pub/pdb/data/structures/all/mmCIF/', 'lvh2' ],
+	'from'	=> [ LVH1_ALL. 'mmCIF/', 'lvh1' ] ,
 	'to'	=> DN_FDATA. '/mmcif' ,
 	'opt'	=> '-L' , //- シンボリックリンクの実体
 	'dryrun' => DRY_RUN ,
 ]);
 
-//.. status
-_rsync([
-	'title' => 'statusデータ csv' ,
-	'from'	=> [ 'pub/pdb/derived_data/index/status_query.csv', 'lvh2' ],
-	'to'	=> DN_FDATA ,
-	'dryrun' => DRY_RUN ,
-]);
-
-_rsync([
-	'title' => 'statusデータ 配列' ,
-	'from'	=> [ 'pub/pdb/derived_data/index/status_query.seq', 'lvh2' ],
-	'to'	=> DN_FDATA ,
-	'dryrun' => DRY_RUN ,
-]);
-
-_rsync([
-	'title' => 'obsoleteデータ dat' ,
-	'from'	=> [ 'pub/pdb/data/status/obsolete.dat', 'lvh2' ],
-	'to'	=> DN_FDATA ,
-	'dryrun' => DRY_RUN ,
-]);
-
-//.. large_structures asb
+//- large_structures asb
 _rsync([
 	'title'	=> 'large biounit',
-	'from'	=> [ 'pub/pdb/data/biounit/mmCIF/all/', 'lvh2' ],
+	'from'	=> [ LVH1_PDB. 'data/biounit/mmCIF/all/', 'lvh1' ],
 	'to'	=> DN_FDATA. '/large_structures_asb/' ,
 	'opt'	=> '-L', //- シンボリックリンクの実体
 	'dryrun' => DRY_RUN ,
@@ -94,16 +67,38 @@ _rsync([
 //.. bundle
 _rsync([
 	'title'	=> 'bundle',
-	'from'	=> [ 'pub/pdb/compatible/pdb_bundle/', 'lvh2' ],
+	'from'	=> [ LVH1_PDB. 'compatible/pdb_bundle/', 'lvh1' ],
 	'to'	=> DN_FDATA. '/pdb_bundle/' ,
 	'opt'	=> '-L',  //- シンボリックリンクの実体
+	'dryrun' => DRY_RUN ,
+]);
+
+//.. status
+_rsync([
+	'title' => 'statusデータ csv' ,
+	'from'	=> [ LVH1_PDB. 'derived_data/index/status_query.csv', 'lvh1' ],
+	'to'	=> DN_FDATA ,
+	'dryrun' => DRY_RUN ,
+]);
+
+_rsync([
+	'title' => 'statusデータ 配列' ,
+	'from'	=> [ LVH1_PDB. 'derived_data/index/status_query.seq', 'lvh1' ],
+	'to'	=> DN_FDATA ,
+	'dryrun' => DRY_RUN ,
+]);
+
+_rsync([
+	'title' => 'obsoleteデータ dat' ,
+	'from'	=> [ LVH1_PDB. 'data/status/obsolete.dat', 'lvh1' ],
+	'to'	=> DN_FDATA ,
 	'dryrun' => DRY_RUN ,
 ]);
 
 //.. edmap list
 _rsync([
 	'title' => 'EDmap 情報',
-	'from'	=> [ 'edmap2/edmap.list', 'lvh2' ],
+	'from'	=> [ '/data/pdbj/edmap2/edmap.list', 'lvh1' ],
 	'to'	=> DN_FDATA,
 	'opt'	=> '-L', //- シンボリックリンクの実体
 	'dryrun' => DRY_RUN ,
@@ -112,7 +107,7 @@ _rsync([
 //.. bird
 _rsync([
 	'title' => 'bird',
-	'from'	=> [ 'pub/pdb/data/bird/', 'lvh2' ],
+	'from'	=> [ LVH1_PDB. 'pdb/data/bird/', 'lvh1' ],
 	'to'	=> DN_FDATA. '/bird',
 //	'opt'	=> '-L' //- シンボリックリンクの実体
 	'dryrun' => DRY_RUN ,

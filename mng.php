@@ -21,7 +21,7 @@ define( 'TASK_CATALOG', [
 	'mng allpdb' ,
 	'mng epdb' ,
 	'mng both' ,
-	'mng unp' ,
+//	'mng unp' ,
 	
 //	'sendlog' ,
 	
@@ -30,15 +30,15 @@ define( 'TASK_CATALOG', [
 	'mng mov' ,
 	'mng pmo' ,
 	'mng postm' ,
-	'mng bird' ,
 	'mng ab' ,
-	'mng unichem' ,
 	'mng chem' ,
+	'mng unichem' ,
+	'mng bird' ,
+	'mng branch' ,
 	'mng wikipe' ,
 	'mng unp' ,
 	'mng met' ,
 	'mng pap',
-	'mng branch' ,
 	'mng dbdic' ,
 
 	'mng vapros' ,
@@ -260,6 +260,7 @@ define( 'TASK_CATALOG', [
 'empiar' => [
 	'emp-1' ,	
 	'emp-2' ,	
+	'emp-3' ,	
 ] ,
 
 'dbid' => [
