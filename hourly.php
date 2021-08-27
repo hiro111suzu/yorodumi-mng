@@ -32,8 +32,8 @@ define( 'JOBLIST', [
 
 	'Wed' => [
 		'02' => 'mng tue' ,
-		'07' => 'unp-5-get_xml 1000' ,
-		'08' => 'mng final' ,
+		'06' => 'unp-5-get_xml 1000' ,
+		'07' => 'mng final' ,
 //		'09' => 'emn_upload do',   //------------------
 		'10' => 'mng final' ,
 		'12' => 'mng final' ,
