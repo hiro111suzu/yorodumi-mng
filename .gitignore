@@ -10,3 +10,5 @@ gomibako/
 *.Rout
 *.log
 *.log
+php_errors.log
+*.log
