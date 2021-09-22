@@ -25,7 +25,7 @@ $objrep_out = [
 	"\n"
 ];
 
-$jmol = DISPLAY . 'java -jar ' . DN_TOOLS . '/jmol/Jmol.jar ';
+$jmol = DISPLAY . 'java -Djava.awt.headless=true -jar ' . DN_TOOLS . '/jmol/JmolData.jar ';
 
 //- スクリプト
 $scrfn = _tempfn( 'cmd' );
