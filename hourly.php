@@ -34,9 +34,11 @@ define( 'JOBLIST', [
 		'02' => 'mng tue' ,
 		'06' => 'unp-5-get_xml 1000' ,
 		'07' => 'mng final' ,
+		'08' => 'mng final' , //------------------
+		'09' => 'omodb-upload',   //------------------
 //		'09' => 'emn_upload do',   //------------------
-		'10' => 'mng final' ,
-		'12' => 'mng final' ,
+//		'10' => 'mng final' ,
+//		'12' => 'mng final' ,
 		'14' => 'mng final' ,
 		'13' => 'hourly_test' ,
 	] ,

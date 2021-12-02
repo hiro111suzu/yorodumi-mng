@@ -811,6 +811,7 @@ function _mov_snaps( $dn_ent, $mov_id, $num_snap ) {
 function _rsync( $p ) {
 	$from = $to = $uname = $opt = $tite = $dryrun = $exclude = $copylink = '';
 	$uname = 'pdbj'; //- ユーザー名デフォルト（スクリプトアップロードのときだけhirofumi）
+//	$uname = 'hirofumi';
 	extract( $p );
 
 	$title = $title ?: ( is_array( $from ) ? _imp( $from ) : $from );
@@ -842,7 +843,7 @@ function _rsync( $p ) {
 		? "$uname@$from $to"
 		: "$from $uname@$to"
 	;
-	$l = "rsync -avz --log-file=$fn_templog $opt --delete -e ssh $from_to";
+	$commnad_line = "rsync -avz --log-file=$fn_templog $opt --delete -e ssh $from_to";
 	_kvtable([
 		'dryrun' => $dryrun ? 'YES' : 'no' ,
 		'uname'	=> $uname ,
@@ -851,7 +852,7 @@ function _rsync( $p ) {
 		'exclude' => $exclude ? count( explode( "\n", $exclude ) ). ' items' : 'none',
 		'copylink' => $copylink ? 'YES' : 'no' ,
 //		'opt'	=> $opt ,
-		'command' => $l ,
+		'command' => $commnad_line ,
 	], 'rsync条件' );
 
 	if ( NORSYNC ) {
@@ -861,10 +862,10 @@ function _rsync( $p ) {
 		return;
 	}
 
-	passthru( $l );
+	passthru( $commnad_line );
 
 	//- log
-	$logfn = DN_PREP . '/rsync-log/log-' . date( 'Y-m-d' ) . '.txt';
+	$fn_log = DN_PREP. '/rsync-log/log-' . date( 'Y-m-d' ) . '.txt';
 	$log = file_get_contents( $fn_templog );
 	
 	$cnt = [];
@@ -874,8 +875,8 @@ function _rsync( $p ) {
 		if ( _instr( '*deleting', $line ) ) ++ $cnt[ 'del' ];
 	}
 	if ( $cnt != [] ) {
-		file_put_contents( $logfn ,
-			( file_exists( $logfn ) ? file_get_contents( $logfn ) : '' )
+		file_put_contents( $fn_log ,
+			( file_exists( $fn_log ) ? file_get_contents( $fn_log ) : '' )
 			. LINE
 			. "[ rsync-log - $title - " . date( 'Y-m-d H:i:s' ) . " ]\n$msg\n"
 			. $log

@@ -14,26 +14,38 @@ $metrep = [
 
 $data = [];
 
-foreach ( _idloop( 'pdb_json' ) as $fn ) {
+foreach ( _idloop( 'qinfo' ) as $fn ) {
 	if ( _count( 1000, 0 ) ) break;
 //	$id = _fn2id( $fn );
 //	_m( "$id: $fn" );
 	$json = _json_load2( $fn );
-	$y = substr( $json->database_PDB_rev[0]->date, 0, 4 );
-	foreach ( $json->exptl as $j ) {
-
-//		++ $data[ $y ][ $m ];
-		++ $data[ $y ][ $metrep[ $j->method ] ?: 'others' ];
+	$y = substr( $json->rdate, 0, 4 );
+	foreach ( $json->method as $j ) {
+		++ $data[ $y ][ $metrep[ $j ] ?: 'others' ];
 	}
+	++ $data[ $y ][ 'total' ];	
 //	break;
 }
 ksort( $data );
 
+//. 総数
 $out = [ implode( "\t", [ 'Year', 'X-ray', 'NMR', 'EM', 'others' ] ) ];
 foreach ( $data as $y => $d ) {
-	$out[] = implode( "\t", [ $y, $d[ 'X-ray' ], $d[ 'NMR' ], $d[ 'EM' ], $d[ 'others' ] ] );
+	$out[] = implode( "\t", [ $y, $d[ 'X-ray' ], $d[ 'NMR' ], $d[ 'EM' ], $d[ 'others' ], $d[ 'total' ] ] );
 }
 $out = implode( "\n", $out );
 file_put_contents( 'stat.tsv', $out );
 _m( $out );
+
+//. 割合
+/*
+$out = [ implode( "\t", [ 'Year', 'X-ray', 'NMR', 'EM', 'others' ] ) ];
+foreach ( $data as $y => $d ) {
+	
+	$out[] = implode( "\t", [ $y, $d[ 'X-ray' ], $d[ 'NMR' ], $d[ 'EM' ], $d[ 'others' ], $d[ 'total' ] ] );
+}
+$out = implode( "\n", $out );
+file_put_contents( 'stat.tsv', $out );
+*/
+
 
