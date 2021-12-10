@@ -47,7 +47,7 @@ foreach( TSVDATA[ 'emdb' ] as $id => $pmid ) {
 		->crossreferences->primary_citation->journal_citation;
 	$data[ "e$id" ] = [
 		't' => PAP_TITLE[ $id ] ?: $main_json->title ,
-		'a' => $main_json->author
+		'a' => _emdb_json3_auth( $main_json->author )
 	];
 }
 //_time( 'emdb' );
@@ -98,10 +98,12 @@ $data = [];
 foreach ( $title2ids as $title => $ids ) {
 	++ $num;
 	_m( "$num/$total: ". _imp( $ids ), 1 );
+//	if ( ! in_array( 'e23050', $ids ) ) continue; //==========
 
 	$pmids_t = _pubmed_url( $title );
-	sleep( 1 );
+//	sleep( 1 );
 	$a = _uniqfilt( $title2auth[ $title ] ) ;
+//	_pause( $a );
 	$pmids_a = 1 < count( (array)$a ) ? _pubmed_url( implode( ' ', $a ) ) : '';
 
 	if ( $pmids_t || $pmids_a ) {
