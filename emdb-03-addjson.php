@@ -16,7 +16,8 @@ foreach ( _idloop( 'emdb_new_json' ) as $fn ) {
 
 //.. 準備
 	//- auth_ref
-	$auth_ref = array_map( 'trim' ,
+//	$auth_ref = array_map( 'trim' ,
+	$auth_ref = _emdb_json3_auth(
 		$json->crossreferences->primary_citation->journal_citation->author
 	);
 
@@ -105,7 +106,7 @@ foreach ( _idloop( 'emdb_new_json' ) as $fn ) {
 		'ddate'		=> $json->admin->key_dates->deposition,
 		'reso'		=> min( $reso ) ,
 		'sauthor'	=> $auth_ref ,
-		'author'	=> array_map( 'trim', $json->admin->author ) ?: $auth_ref ,
+		'author'	=> _emdb_json3_auth( $json->admin->author ) ?: $auth_ref ,
 		'met'		=> _met_code( $json->structure_determination[0]->method )
 		,
 		'pmid'		=> $o_pubmedid_tsv->get(
