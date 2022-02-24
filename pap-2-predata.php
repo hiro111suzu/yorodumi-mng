@@ -45,7 +45,7 @@ foreach ( _idlist( 'emdb' ) as $id ) {
 	$did = $o_id->set_emdb( $id )->did;
 	$ex_id[ $did ] = true;
 
-	$fn_json = _fn( 'emdb_old_json', $id );
+	$fn_json = _fn( 'emdb_new_json', $id );
 	$fn_add  = _fn( 'emdb_add' , $id );
 	$fn_out  = _fn( 'emdb_pap' , $id );
 
@@ -72,24 +72,25 @@ foreach ( _idlist( 'emdb' ) as $id ) {
 	if ( $flg_continue ) continue;
 
 	//.. main
-	$json = _json_load2( $fn_json );
+	$json = _emdb_json3_rep( _json_load2( $fn_json ) );
 	_d( 'pmid', $pmid );
 
 	//- EMDB jsonから
-	$dep = $json->deposition;
-	$jnl = $dep->primaryReference->journalArticle;
+	$jnl = $json->crossreferences->primary_citation->journal_citation;
+//	_pause( $jnl );
+//	$jnl = $dep->primaryReference->journalArticle;
 	
-	_d( 'author'	, _exp( $jnl->authors ?: $dep->authors ) );
-	_d( 'journal'	, $jnl->journal );
-	_d( 'doi'		, $jnl->ref_doi );
-	_d( 'title'		, PAP_TITLE[ $id ] ?: $jnl->articleTitle );
+	_d( 'author'	, $add->sauthor ?: $add->author );
+	_d( 'journal'	, $jnl->journal_abbreviation ?: $jnl->journal );
+	_d( 'doi'		, $jnl->ref_DOI );
+	_d( 'title'		, PAP_TITLE[ $id ] ?: $jnl->title );
 	_d( 'issue'		, _imp( array_filter([
 		_ifnn( $jnl->volume		, 'Vol. \1'		) ,
-		_ifnn( $jnl->issue		, 'Issue \1'	) ,
-		_page( $jnl->firstPage, $jnl->lastPage ),
+//		_ifnn( $jnl->issue		, 'Issue \1'	) ,
+		_page( $jnl->first_page, $jnl->last_page ),
 		_ifnn( $jnl->year		, 'Year \1'	)
 	]) ) );
-	_d( 'date'		, $dep->depositionDate );
+	_d( 'date'		, $add->ddate );
 	_d( 'date_type'	, 'str' );
 	_d( 'method'	, [ 'em' ] );
 	_d( 'method2'	, [ $add->met ] );
@@ -101,20 +102,14 @@ foreach ( _idlist( 'emdb' ) as $id ) {
 	if ( $pmid != '' ) {
 		_pmj( $fn_pmjson );
 	}
-	_d( 'kw', '' ); 
+	_d( 'kw', _exp( $json->admin->keywords ) ); 
 
 	//- 生物種
 	//- emdbの処理を整理したら、ここも修正、addjsonから取得
-	$a = [];
-	foreach ( (array)$json->sample->sampleComponent as $k1 => $v1 ) {
-		if ( ! is_object( $v1 ) ) continue;
-		foreach ( $v1 as $k2 => $v2 ) {
-			$n = $v2->natSpeciesName ?: $v2->sciSpeciesName;
-			if ( $n == '' ) continue;
-			$a[ $n ] = true;
-		}
-	}
-	_d( 'src', array_keys( $a ) );
+	_d( 'src', array_values( _uniqfilt( array_merge(
+		_branch( $json, 'sample->supramolecule[*]->natural_source[0]->organism' ) ,
+		_branch( $json, 'sample->macromolecule[*]->natural_source[0]->organism' ) ,
+	))));
 
 	_sv( $fn_out );
 	_cnt( 'saved' );
@@ -476,7 +471,7 @@ function _sv( $fn ) {
 
 	//- pubmedIDがない場合は、適当な文字列のMD5ハッシュをタイトルとする
 	if ( ! $_data[ 'pmid' ] )
-		$_data[ 'pmid' ] = _paper_id( $_data[ 'title' ], $_data[ 'journal' ] );
+		$_data[ 'pmid' ] = _paper_id( $_data[ 'title' ], $_data[ 'journal' ] ) ?: $did;
 
 	_json_save( $fn, $_data );
 	$did2pmid[ $did ] = $_data[ 'pmid' ];
@@ -539,6 +534,7 @@ function _page( $p1, $p2 ) {
 function _paper_id( $title, $journal ) {
 	return $title . $journal == ''
 			|| strtolower( $title ) == 'to be published'
+			|| strlen( $title ) < 4 //- タイトルが"TBD"となっているエントリがある
 			|| strtolower( $title ) == 'suppressed'
 			|| strtolower( $journal ) == 'suppressed'
 		? ''

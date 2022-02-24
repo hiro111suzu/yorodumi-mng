@@ -114,7 +114,7 @@ foreach ( PMID2DID as $pmid => $ids ) {
 	$score += round( sqrt( $if ) * 3 ) ; //- IF ボーナス
 	$score += ( count( $data[ 'method2' ] ) * 5 ); //- ハイブリッドボーナス
 	if ( _instr( 'SARS-CoV-2', $data['title'][0] ) )
-		$score += 3; //- コロナボーナス
+		$score += 2; //- コロナボーナス
 	if ( substr( $id, 0, 1 ) == '_' ) //- pubmed-IDがなければ-30
 		$score -= 20; 
 

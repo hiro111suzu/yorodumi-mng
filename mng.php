@@ -158,14 +158,15 @@ define( 'TASK_CATALOG', [
 
 'emdb' => [
 	'emdb-01' ,
-	'emdb-02-' ,
-	'emdb-02b' ,
+	'emdb-02-xml2json' ,
+//	'emdb-02c' ,
 	'emdb-03' ,
 	'emdb-04' ,
 	'emdb-05' ,
 	'emdb-06' ,
 	'emdb-07' ,
 	'emdb-10' ,
+	'emdb-11' ,
 ],
 'emdb_omo' => [
 	'emdb-08' ,

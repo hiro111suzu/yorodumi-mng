@@ -1,7 +1,24 @@
 <?php
 //define( 'FLG', $argv[1] );
 require_once( "commonlib.php" );
-_m( (float)"4.0" );
+$data = [];
+//_die( _idlist( 'emdb_new_json' ) );
+foreach ( _idloop( 'emdb_new_json' ) as $fn ) {
+	$id = _fn2id( $fn );
+	foreach ( _emdb_json3_rep( _json_load2( $fn ) )->structure_determination[0] as $k => $v ) {
+		if ( ! is_array( $v ) ) continue;
+		if ( 1 < count( $v ) ) {
+			$data[ $k ][] = $id;
+			_m( "$id-$k: ". count( $v ) );
+		}
+	}
+}
+_m( _json_pretty( $data ) );
+_json_save( DN_REPORT. '/emdb_multi_str_det_tag.json', $data );
+
+
+
+//_m( (float)"4.0" );
 /*
 $tsv = _tsv_load2( DN_EDIT. '/chem_annot.tsv' );
 $chem_ignroe = [];

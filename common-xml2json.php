@@ -116,6 +116,37 @@ function _rep_prep( $s ) {
 	return $ret;
 }
 
+//.. _rep_prep_attr: 属性用の rep_prep
+function _rep_prep_attr( $in ) {
+	$ret = [];
+	foreach ( $in as $key => $new_tag ) {
+		$key = explode( ' ', $key, 2 );
+		if ( $key[1] ) {
+			$tag1 = $key[0];
+			$attr_name = $key[1];
+		} else {
+			$tag1 = '[^ >]+';
+			$attr_name = $key[0];
+		}
+		$ret['in'][] = "/<($tag1)(| [^>]+) $attr_name=\"(.+?)\"(| [^>]+)>/";
+		if ( is_array( $new_tag ) ) {
+			//- 新タグを要素の中に入れる
+			$new_tag = $new_tag[0]; 
+			$ret['out'][] = "<$1$2$4><$new_tag>$3</$new_tag>";
+		} else if ( $new_tag ) {
+			//- 新タグを同列にする
+			$ret['out'][] = "<$new_tag>$3</$new_tag><$1$2$4>";
+		} else {
+			//- 属性を消す
+			$ret['out'][] = "<$1$2$4>";
+			
+		}
+	}
+//	_pause( $ret );
+	return $ret;
+}
+
+
 //.. _pre_conv
 function _pre_conv( $cont, $add = [] ) {
 	return preg_replace(
@@ -137,7 +168,12 @@ function _post_conv( $a ) {
 	$msg = DB_TYPE . "-$id:";
 
 	//... str => XML
-	$x = simplexml_load_string( strtr( $cont, REP_MULTITAG ) );
+	$x = simplexml_load_string( strtr(
+		$cont,
+		array_merge( REP_MULTITAG, defined('REP_DELTAG') ? REP_DELTAG : [] ) 
+	));
+//	if ( defined( 'REP_DELTAG' ) )
+//		$x = strtr( $x, REP_DELTAG );
 	if ( $x === false ) {
 		_problem( DB_TYPE . "$msg XMLパースできない" );
 		_cnt( 'error: XML persing' );
@@ -182,4 +218,23 @@ function _post_conv( $a ) {
 		_cnt( 'converted' );
 	}
 }
+
+//.. _prep_deltag 冗長なタグを消す strtrにわたす
+function _prep_deltag( $tags ) {
+	if ( is_string( $tags ) ) {
+		$out = [];
+		foreach ( explode( "\n", $tags ) as $line ) {
+			$out[] = trim( $line );
+		}
+		$tags = $out;
+	}
+	$rep = [];
+	foreach ( $tags as $tag ) {
+		$rep[ "<$tag>" ] = '';
+		$rep[ "</$tag>" ] = '';
+	}
+//	_pause( $rep );
+	define( 'REP_DELTAG', $rep );
+}
+
 

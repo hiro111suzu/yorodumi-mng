@@ -17,12 +17,12 @@ define( 'NEW_LIM', time() - 3600*24*200 );
 
 //. emdb data
 //_line( 'emdb data' );
-foreach ( _idloop( 'emdb_old_json', 'EMDB' ) as $fn ) {
+foreach ( _idloop( 'emdb_new_json', 'EMDB' ) as $fn ) {
 	if ( _count( 1000, 0 ) ) break;
 	$id = _fn2id( $fn );
-	$json = _json_load2( $fn );
+	$json = _emdb_json3_rep( _json_load2( $fn ) );
 
-	$kw = explode( ',', $json->deposition->keywords );
+	$kw = explode( ',', $json->admin->keywords );
 	foreach ( (array)$json->experiment->vitrification as $c )
 		$kw[] = $c->instrument;
 	foreach ( (array)$json->experiment->imaging as $c )
@@ -40,7 +40,6 @@ foreach ( _idloop( 'emdb_old_json', 'EMDB' ) as $fn ) {
 	_kw( $kw, $json->deposition->depositionDate, true );
 
 	_an( _json_load2([ 'emdb_add', $id ])->author );
-
 }
 
 

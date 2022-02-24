@@ -50,11 +50,11 @@ foreach ( TSV_DATA[ 'emdb' ] as $id => $pmid ) {
 	if ( !_load_pubmed_json( $pmid ) ) continue;
 
 	$main_json = _json_load2([ 'emdb_new_json', $id ])
-		->crossreferences->primary_citation->journal_citation;
+		->crossreferences->primary_citation->journal_citation
+	;
 	$title_xml = $main_json->title;
 	if ( _is_same( $title_xml ) ) continue;
-	_out1( $title_xml, $main_json->author );
-
+	_out1( $title_xml, _branch( $main_json, 'author->name' ) );
 	++ $count;
 }
 

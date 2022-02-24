@@ -73,9 +73,9 @@ foreach ( $id_list as $id_out ) {
 
 	//.. 表面レベル
 	$in = $cont;
-	$json = _json_load2( _fn( 'emdb_old_json', $id_out ) )->map;
+	$json = _json_load2( _fn( 'emdb_new_json', $id_out ) )->map;
 	if ( $json  ) {
-		$t = $json->contourLevel ?: $json->contourLevel->_v ;
+		$t = $json->contour[0]-level;
 		if ( $t && ! is_array( $t ) ) {
 			_m( "Surface level for $id_out: $t" );
 			$in = preg_replace(

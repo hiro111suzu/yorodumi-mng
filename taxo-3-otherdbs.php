@@ -25,15 +25,48 @@ foreach ( array_filter( $data ) as $n ) {
 
 $all = [];
 _count();
-foreach ( _idloop( 'emdb_old_json' ) as $fn ) {
+foreach ( _idloop( 'emdb_json' ) as $fn ) {
+	$flg_name = true; //- IDと関連づけるフラグ
 	$id = _fn2id( $fn );
 	_count( 1000 );
 	$data = [];
 	$names = [];
-	$json = _json_load2( $fn );
-	foreach ( (array)$json->sample->sampleComponent as $k1 => $v1 ) {
-		if ( ! is_object( $v1 ) ) continue;
+	$json = _emdb_json3_rep( _json_load2( $fn ) )->sample;
 
+	//.. nat
+	foreach ( _uniqfilt( array_merge(
+		_branch( $json, 'macromolecule[*]->natural_source' ) ,
+		_branch( $json, 'supramolecule[*]->natural_source' )
+	)) as $c ) {
+//		_pause( $c );
+		_do(
+			_rep( 'emdb', $c->organism ) ,
+			$c->{"organism.ncbi"}
+		);
+	}
+	//- virus
+	foreach ( (array)$json->supramolecule as $c ) {
+		if ( ! $c->sci_species_name ) continue;
+		_do(
+			$c->sci_species_name,
+			$c->{"sci_species_name.ncbi"}
+		);
+	}
+
+	//.. recombinant
+	$flg_name = false;
+	foreach ( _uniqfilt( array_merge(
+		_branch( $json, 'macromolecule[*]->recombinant_expression' ) ,
+		_branch( $json, 'supramolecule[*]->recombinant_expression' )
+	)) as $c ) {
+		_do(
+			_rep( 'emdb', $c->recombinant_organism ) ,
+			$c->{"recombinant_organism.ncbi"}
+		);
+	}
+
+
+/*
 		//.. source
 		foreach ( $v1 as $v2 ) {
 			$flg_name = true;
@@ -52,7 +85,7 @@ foreach ( _idloop( 'emdb_old_json' ) as $fn ) {
 				_cnt( 'sci' );
 			}
 
-			//.. exp system/host
+			//.. exp sys tem/host
 			$flg_name = false;
 			if ( is_object( $v2->engSource ) ) {
 				_do(
@@ -75,10 +108,14 @@ foreach ( _idloop( 'emdb_old_json' ) as $fn ) {
 			}
 		}
 	}
+*/
+
 	$data = array_values( _uniqfilt( $data ) );
 	if ( $data ) {
 		$all[$id] = $data;
 	}
+//	_m( "$id:" );
+//	_pause( array_values( _uniqfilt( $names ) ) ); 
 	$namelist[ "e|$id" ] = array_values( _uniqfilt( $names ) );
 }
 _cnt();
@@ -160,4 +197,16 @@ _json_save( FN_LIST_ALL, $sum );
 //. function
 function _rep( $type, $n ) {
 	return _reg_rep( $n, TSV_REP[ $type ] );
+}
+
+//. function
+function _do_test( $name, $tid ) {
+	global $id, $cnt_do;
+	if ( ! $cnt_do )
+		$cnt_do = 0;
+	_m( "$id: $name - $tid" );
+	++ $cnt_do;
+	if ( $cnt_do < 50 ) return;
+	_pause( 'pause' );
+	$cnt_do = 0;
 }

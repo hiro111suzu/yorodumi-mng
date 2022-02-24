@@ -47,6 +47,7 @@ $o_id2mom = new cls_sqlw([
 $data = $id2mom = $no_pdbid = [];
 foreach ( _idloop( 'mom_html' ) as $fn ) {
 	$mom_id = _fn2id( $fn );
+//	if ( $mom_id != 266 ) continue;
 	$html = file_get_contents( $fn );
 
 	//... PDB-ID
@@ -111,8 +112,13 @@ foreach ( _idloop( 'mom_html' ) as $fn ) {
 
 	_m( "#$mom_id / $date :\t". count( $fh_items ). ' items' );
 	$title = _match( '/<title>(.+?)<\/title>/', $html )[0][1];
-
 	list( $dummy, $title_j, $title_e ) = _match( '/[0-9]+: (.+?)（(.+?)）/', $title )[0];
+	if ( ! $title_j ) {
+		_m( $title, 'red' );
+		list( $dummy, $title_j, $title_e ) = _match( '/^(.+?) \((.+?)\)/', $title )[0];
+		print_r( _match( '/(.+?) \((.+?)\)/', $title )[0] );
+		_m( 'new version: '. $title_j, 'blue' );
+	}
 	$o_info->set([
 		$mom_id , 
 		$title_e ,

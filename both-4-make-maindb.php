@@ -73,12 +73,12 @@ foreach ( _joblist( MODE_DB ) as $job ) {
 
 	//.. ファイル名 loadfile
 	if ( $db == 'emdb' ) {
-		$emdb_old_json  = _json_load2([ 'emdb_old_json', $id ]);
-		$emdb_json3 = _emdb_json3_rep( _json_load2([ 'emdb_json3', $id ]) );
+		$emdb_json = _json_emdb( $id );
+		$emdb_old_json = _json_load2([ 'emdb_old_json', $id ]);
 		$pdb_json   = $o_empty;
 	} else {
-		$emdb_old_json  = $o_empty;
-		$emdb_json3 = $o_empty;
+		$emdb_old_json = $o_empty;
+		$emdb_json = $o_empty;
 		$pdb_json   = _json_load2([ 'epdb_json', $id ]);
 	}
 	$add  = _json_load2([ $db. '_add', $id ]);
@@ -101,12 +101,12 @@ foreach ( _joblist( MODE_DB ) as $job ) {
 	_data( 'release'	, $add->rdate );
 	_data( 'submit'		, $add->ddate );
 	_data( 'submit_year' , substr( $add->ddate, 0, 4 ) );
-	_data( 'authors'	, implode( '|', $add->author ) );
+	_data( 'authors'	, implode( '|', (array)$add->author ) );
 
 	if ( $db == 'emdb') {
-		_data( 'proc_site'	, $emdb_json3->admin->current_status->processing_site );
-		_data( 'title'		, $emdb_json3->admin->title );
-		$udate = $emdb_json3->admin->current_status->date;
+		_data( 'proc_site'	, $emdb_json->admin->current_status->processing_site );
+		_data( 'title'		, $emdb_json->admin->title );
+		$udate = $emdb_json->admin->current_status->date;
 	} else {
 		_data( 'proc_site'	, $pdb_json->pdbx_database_status[0]->process_site  );
 		_data( 'title'		, $pdb_json->struct[0]->title );
@@ -132,21 +132,37 @@ foreach ( _joblist( MODE_DB ) as $job ) {
 		}
 	} else {
 		//- EMDB
-		$j = $emdb_json3->crossreferences->primary_citation->journal_citation;
+		$j = $emdb_json->crossreferences->primary_citation->journal_citation;
 		_data( 'journal', $j->journal ?: $j->journal_abbreviation );
 	}
 
 	//..  data - sample
-	$j = $pdb_json->em_entity_assembly_molwt[0];
-	$molw = ( $emdb_old_json->sample->molWtExp ?: $emdb_old_json->sample->molWtTheo )
-		. ( $j->units == 'MEGADALTONS' ? $j->value : '' )
-	;
-	_data( 'olig_state'	, $emdb_old_json->sample->compDegree  );
-
+	$molw = '';
+	if ( $db == 'emdb' ) {
+		$molw = max( (array)_branch( $emdb_json,
+			'sample->supramolecule[*]->molecular_weight->experimental'
+		)) ?:
+			max( (array)_branch( $emdb_json,
+			'sample->supramolecule[*]->molecular_weight->theoretical'
+		));
+		if ( ! $molw ) {
+			$sum = 0;
+			foreach ( _branch( $emdb_json,
+				'sample->macromolecule[*]->molecular_weight' ) as $m
+			) {
+				$sum += $m->experimental ?: $m->theoretical;
+			}
+			if ( $sum )
+				$molw = $sum;
+		}
+	} else {
+		$j = $pdb_json->em_entity_assembly_molwt[0];
+		if ( $j->units == 'MEGADALTONS' )
+			$molw = $j->value;
+	}
 	_data( 'molw'		, $molw );
-
 	_data( 'agg_state'	,
-		$emdb_old_json->experiment->specimenPreparation->specimenState
+		$emdb_json->structure_determination[0]->aggregation_state
 		?:
 		$pdbj_json->em_experiment[0]->aggregation_state
 	);
@@ -167,13 +183,13 @@ foreach ( _joblist( MODE_DB ) as $job ) {
 	//.. data - component / taxo
 	$compo = $spec = [];
 	//... emdb
-	foreach ( (array)$emdb_old_json->sample->sampleComponent as $key1 => $val1 ) {
-		if ( ! is_object( $val1 ) ) continue;
-		$compo[] = $val1->entry;
-		foreach ( $val1 as $key2 => $val2 ) {
-			$spec[] = $val2->natSpeciesName ?: $val2->sciSpeciesName ;
-		}
-	}
+	$compo = array_values( _uniqfilt(
+		_branch( $emdb_json, 'sample->supramolecule[*]->supmol_type' )
+	));
+	$spec = array_values( _uniqfilt( array_merge(
+		_branch( $emdb_json, 'sample->supramolecule[*]->natural_source[0]->organism' ) ,
+		_branch( $emdb_json, 'sample->macromolecule[*]->natural_source[0]->organism' ) ,
+	)));
 
 	//... pdb
 	foreach ( (array)$pdb_json->em_entity_assembly as $c )
@@ -195,8 +211,8 @@ foreach ( _joblist( MODE_DB ) as $job ) {
 	$temprt = 0;
 	if ( $db == 'emdb' ) {
 		//... emdb
-		$e_em = $emdb_json3->structure_determination[0]->microscopy[0];
-		$e_vit = $emdb_json3->structure_determination[0]->preparation[0]->vitrification;
+		$e_em = $emdb_json->structure_determination[0]->microscopy[0];
+		$e_vit = $emdb_json->structure_determination[0]->preparation[0]->vitrification;
 		$temprt = $e_em->temperature->temperature_average
 			?: ( $e_em->temperature_min + $e_em->temperature_max ) /2
 		;
@@ -237,11 +253,14 @@ foreach ( _joblist( MODE_DB ) as $job ) {
 	//.. data Processing
 	_data( 'resolution'		, $add->reso );
 	if ( $db == 'emdb' ) {
+/*
 		$e_rec = $emdb_old_json->processing->reconstruction[0];
-		_data( 'reso_method', $e_rec->resolutionMethod );
+		$e_rec = $emdb_json->structure_determination[0]->processing[0];
+//		_data( 'reso_method', _branch(  );
 		_data( 'ctf_corr' 	, $e_rec->ctfCorrection );
 		_data( 'rec_algo'	, $e_rec->algorithm );
 		_data( 'rec_soft'	, $e_rec->software );
+*/
 	} else {
 		$p_rec = $pdb_json->em_3d_reconstruction[0];
 		_data( 'reso_method', $p_rec->resolution_method );
@@ -285,7 +304,7 @@ foreach ( _joblist( MODE_DB ) as $job ) {
 	//.. data - seach_words
 	//- 空白で挟んで単語検索できるようにする
 	$_vals = [];
-	_json_vals( $emdb_old_json );
+	_json_vals( $emdb_json );
 	_json_vals( $pdb_json );
 	_json_vals( $add  );
 	_json_vals( $pubmed_json );
@@ -320,7 +339,7 @@ foreach ( _joblist( MODE_DB ) as $job ) {
 	_comp_save( _fn( 'maindb_json', $did ), $data, 'nomsg' );
 //	_pause( "$id" );
 }
-_cnt2();
+//_cnt2();
 
 //. 取り消しデータを削除
 $ex = [];
@@ -453,3 +472,9 @@ function _json_vals( $j ) {
 		}
 	}
 }
+
+//.. _br
+function _br( $json, $branch ) {
+	return array_values( _uniqfilt( _branch( $json, $branch ) ) );
+}
+

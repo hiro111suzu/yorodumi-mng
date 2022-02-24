@@ -101,7 +101,7 @@ foreach( _idlist( 'emdb' ) as $id ) {
 	//- apix
 	$apix = $movinfo[1][ 'apix x' ] ?: $mapinfo[ 'APIX X' ];
 	if ( $apix == '' )
-		$apix = _json_load2([ 'emdb', $id ])->map->pixelSpacing->pixelX;
+		$apix = _json_load2([ 'emdb_json', $id ])->map->pixel_spacing->x;
 
 //.. 中間ファイル変換
 	_m(  "\n$id: vq用マップ作成開始 - A/pix: $apix A" );

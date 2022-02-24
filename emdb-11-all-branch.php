@@ -6,7 +6,7 @@ $ids = [];
 $ids_multi = [];
 $data = [];
 $num_ent = 0;
-foreach ( _idloop( 'emdb_json3' ) as $pn ) {
+foreach ( _idloop( 'emdb_json' ) as $pn ) {
 	if ( _count( 'emdb', 0 ) ) break;
 	$id = _fn2id( $pn );
 	$json = _emdb_json3_rep( _json_load2( $pn ) );
@@ -28,7 +28,7 @@ foreach ( $data as $k => $v ) {
 //	_m( $o );
 	$out .= $o;
 }
-file_put_contents( DN_PREP. '/emdb_all_tags.tsv', $out );
+_comp_save( DN_PREP. '/emdb_all_tags.tsv', $out );
 
 //. json
 ksort( $ids );

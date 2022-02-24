@@ -47,6 +47,7 @@ define( 'DN_TOOLS'		, FLG_FILESV3 ? '/yorodumi/tools' : '/tools' );
 //realpath( __DIR__ . '/../../softwares-64' ) );
 
 define( 'DN_PREP'		, DN_ROOT . '/prepdata' );
+define( 'DN_REPORT'		, DN_PREP .	'/report' ) ;
 define( 'DN_EDIT'		, DN_ROOT . '/edit' );
 define( 'DN_EMNAVI'		, DN_ROOT . '/emnavi' );
 define( 'DN_FDATA'		, DN_ROOT . '/fdata' );		//- fdataディレクトリ、外からのデータ
@@ -1450,6 +1451,7 @@ function _cnt2( $val = '__show', $categ = '' ){
 			if ( ! $cnt ) continue;
 			_kvtable( $cnt, "データ数集計 - $categ" );
 		}
+		_tsv_save2( DN_REPORT. '/'. TASK_NAME. '.tsv', $_data_cnt2 );
 		$_data_cnt2 = [];
 		return;
 	} else {
@@ -2041,7 +2043,10 @@ class cls_pubmedid_tsv {
 
 	//.. get
 	function get( $id, $pmid_xml ) {
+		
 		$pmid_tsv = $this->data[ $this->db ][ $id ];
+//		_m( 'xml:'. $pmid_xml );
+//		_m( 'tsv:'. $pmid_tsv );
 		//- tsvとの整合性チェック
 		if ( $pmid_tsv == '' ) {
 			//- tsvに記載なし
@@ -2066,6 +2071,7 @@ class cls_pubmedid_tsv {
 				}
 			}
 		}
+//		_m( 'ret: '. $ret );
 		return $ret;
 	}
 	//.. save

@@ -22,11 +22,11 @@ $dbdata = [];
 _line( 'EMDB情報から' );
 foreach ( _idlist( 'emdb' ) as $emdb_id ) {
 	_count( 1000 );
-
-	//- json
-	$pdbids = _json_load2([ 'emdb_old_json', $emdb_id ])->deposition->fittedPDBEntryId;
-	foreach ( (array)$pdbids as $i ) {
-		_set( $dbdata, $emdb_id, trim( strtolower( $i ) ) );
+	//- crossreferences->pdb_reference[*]->pdb_id
+	foreach ( (array)_json_load2(['emdb_new_json', $emdb_id])
+		->crossreferences->pdb_reference as $c 
+	) {
+		_set( $dbdata, $emdb_id, strtolower( $c->pdb_id ) );
 	}
 }
 
@@ -146,6 +146,20 @@ foreach ( _idlist( 'emdb' ) as $emdb_id ) {
 }
 
 //. まとめ
+/*
+_reform( $dbdata );
+_compare( FN_DATA, $dbdata );
+
+_reform( $confirmed );
+_compare( FN_CONFIRMED, $confirmed );
+
+foreach ( $annot as $k => $v ) {
+	if ( $k == 'types' ) continue;
+	_reform( $annot[ $k ] );
+}
+_compare( FN_ANNOT, $annot );
+_end();
+*/
 _reform( $dbdata );
 _comp_save( FN_DATA, $dbdata );
 
@@ -160,6 +174,20 @@ _comp_save( FN_ANNOT, $annot );
 _end();
 
 //. function
+//.. 
+function _compare( $fn, $json ) {
+	_line( $fn );
+	$json_old = _json_load( $fn );
+	if ( $json == $json_old ) {
+		_m( 'same' );
+	} else {
+		_m( 'different');
+//		foreach ( $
+	}
+}
+
+
+
 //.. _set
 function _set( &$data, $emdb_id, $pdb_id ) {
 	$emdb_id = _emdbid( $emdb_id );

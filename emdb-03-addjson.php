@@ -9,49 +9,18 @@ $dif_count = [];
 $sym_only_v1 = [];
 
 //. main loop
-foreach ( _idloop( 'emdb_new_json' ) as $fn ) {
+foreach ( _idloop( 'emdb_json' ) as $fn ) {
 	_count( 'emdb' );
 	$id = _fn2id( $fn );
+//	if ( $id != 1003 ) continue;
 	$json = _emdb_json3_rep( _json_load2( $fn ) );
 
 //.. 準備
-	//- auth_ref
-//	$auth_ref = array_map( 'trim' ,
-	$auth_ref = _emdb_json3_auth(
-		$json->crossreferences->primary_citation->journal_citation->author
-	);
-
-	//- reso
-	$reso = $sym = [];
-	foreach ( (array)$json->structure_determination as $c ) {
-		foreach( $c->processing as $c2 ) {
-			$reso[] = (float)$c2->final_reconstruction->resolution;
-			$sym[] = $c2->final_reconstruction->applied_symmetry->point_group;
-		}
-	}
-
-	//- sym
-	$sym = _imp( _uniqfilt( $sym ) );
-	if ( $sym == '' ) {
-		$j = _json_load2([ 'emdb_old_json', $id ])->processing;
-		$sym = $j->singleParticle->appliedSymmetry ?:
-			$j->subtomogramAveraging->appliedSymmetry
-		;
-		if ( $sym ) {
-			$sym_only_v1[ $id ] = $sym;
-			_cnt2( 'only v1', 'sym' );
-		} else {
-			_cnt2( 'no sym', 'sym' );
-		}
-	} else {
-		_cnt2( 'in v3', 'sym' );
-	}
+	//- resolution
+	$reso = _br('structure_determination[0]->processing[*]->final_reconstruction->resolution');
 
 	//- $clev_src
-	$clev_src = $json->map->contour[0]->level != ''
-		? $json->map->contour[0]->source
-		: ''
-	;
+	$clev_src = _br('interpretation->additional_map_list->additional_map[*]->contour[0]->source')[0];
 
 	//- stain / cryo
 	$conf_cryo    = _mng_conf( 'sample_cryo', $id );
@@ -97,38 +66,51 @@ foreach ( _idloop( 'emdb_new_json' ) as $fn ) {
 */
 
 //.. output
-	_comp_save( _fn( 'emdb_add', $id ), array_filter([
-//	_comp_save_test( _fn( 'emdb_add', $id ), [
+	$out = array_filter([
+	//	_comp_save_test( _fn( 'emdb_add', $id ), [
 		'rdate'		=> $json->admin->current_status->code == 'REL'
 			? $json->admin->key_dates->map_release
 			: ''
 		,
 		'ddate'		=> $json->admin->key_dates->deposition,
-		'reso'		=> min( $reso ) ,
-		'sauthor'	=> $auth_ref ,
-		'author'	=> _emdb_json3_auth( $json->admin->author ) ?: $auth_ref ,
-		'met'		=> _met_code( $json->structure_determination[0]->method )
-		,
+		'reso'		=> $reso ? min( $reso ) : null,
+		'sauthor'	=> _br(
+			'crossreferences->primary_citation->journal_citation->author[*]->name'
+		),
+		'author'	=> _br('admin->author[*]->name') ,
+		'met'		=> _met_code( $json->structure_determination[0]->method ) ,
 		'pmid'		=> $o_pubmedid_tsv->get(
 			$id,
 			$json->crossreferences->primary_citation->journal_citation->ref_PUBMED
 		) ,
 		'non_auth_clev' => $clev_src && $clev_src != 'AUTHOR' ,
-		'sym'		=> $sym ,
+		'sym'		=> _imp( _br(
+			'structure_determination[0]->processing[*]->final_reconstruction->applied_symmetry->point_group' 
+		)),
 		'stained'	=> $stained ,
 		'cryo'		=> $cryo ,
-	]), 'nomsg' );
+	]);
+	foreach ( $out as $k => $v )
+		_cnt2( $k, 'keys' );
+	_comp_save( _fn( 'emdb_add', $id ), $out, 'nomsg' );
 }
 
 
 //. end
 _delobs_emdb( 'emdb_add' );
 $o_pubmedid_tsv->save();
-_json_save( DN_PREP. '/sym_only_v1.json', $sym_only_v1 );
+
 _cnt2();
 _end();
 
 //. function
+
+//.. _br
+function _br( $path ) {
+	global $json;
+//	_pause( "$id:". _imp( _branch( $json, $path ) ) );
+	return array_values( _uniqfilt( _branch( $json, $path ) ) );
+}
 
 //.. _comp_save_test テスト用
 function _comp_save_test( $fn, $new, $dummy = '' ) {

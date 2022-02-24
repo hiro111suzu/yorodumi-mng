@@ -73,14 +73,14 @@ foreach ( _idloop( 'pdb_json', 'PDBからmet収集' ) as $fn ) {
 	);
 
 	_get_from_json(
-		'm', 'em_sample_support.grid_type'
+		'e', 'em_sample_support.grid_type'
 	);
 	_get_from_json(
-		'm', 'em_sample_support.grid_material'
+		'e', 'em_sample_support.grid_material'
 	);
 
 	_get_from_json(
-		'm', 'em_imaging_optics.phase_plate'
+		'e', 'em_imaging_optics.phase_plate'
 	);
 
 	//... em_software

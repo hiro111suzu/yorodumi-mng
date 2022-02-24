@@ -64,7 +64,6 @@ _php( 'sub-make-sitemap' );
 _del( '../emnavi/main.sqlite' ); //- もう必要ないか・・・
 _del( '../emnavi/php_errors.log' );
 
-
 //. rsync
 _line( FLG_DRY_RUN ? 'テストモードで実行 (本番は"do"をオプションで)' : '本番アップロード' );
 

@@ -9,28 +9,26 @@ $o_sql = new cls_sqlite( 'taxoid' );
 
 $data = [];
 _count();
-foreach ( _idloop( 'emdb_old_json' ) as $fn ) {
+foreach ( _idloop( 'emdb_json' ) as $fn ) {
 	$id = _fn2id( $fn );
 	_count( 1000 );
-	$json = _json_load2( $fn );
-	foreach ( (array)$json->sample->sampleComponent as $v1 ) {
-		if ( ! is_object( $v1 ) ) continue;
-		if ( ! is_object( $v1->virus ) ) continue;
-		$virus = (string)$v1->virus->sciSpeciesName;
-		$host = (string)$v1->virus->natSource->hostSpecies
-			?: (string)$v1->virus->natSource->hostCategory;
-		$host = TSV_REP['emdb_host_rep'][ strtolower($host) ] ?: $host;
-		if ( $host == $virus ) continue;
-		if ( ! $virus || ! $host ) continue;
-
+	foreach ( (array)_emdb_json3_rep( _json_load2( $fn ) )->sample->supramolecule as $c ) {
+		if ( ! $c->sci_species_name ) continue;
+		$virus = $c->sci_species_name;
 		$virus = $o_sql->qcol([
 			'select' => 'id',
 			'where' => 'name='. _quote( $virus )
 		])[0] ?: $virus;
-		if ( TSV_REP['emdb_host_wrong_pair'][ strtolower($virus) ] == $host )
-			continue;
-		
-		$data[ $virus ][ $host ] = 1;
+		foreach ( (array)$c->natural_host as $h ) {
+			$host = $h->organism ?: $h->synonym_organism;
+			if ( $host == $virus ) continue;
+			$host = TSV_REP['emdb_host_rep'][ strtolower($host) ] ?: $host;
+			if ( ! $virus || ! $host ) continue;
+			if ( TSV_REP['emdb_host_wrong_pair'][ strtolower($virus) ] == $host )
+				continue;
+			$data[ $virus ][ $host ] = 1;
+//			_pause( "$id: $virus -> $host" );
+		}
 //		if ( $virus == 110829 )
 //			_m( "$id: $host" );
 //		_m( "$virus -> $host" );

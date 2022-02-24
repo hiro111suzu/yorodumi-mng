@@ -124,8 +124,8 @@ foreach ( $data[ 'newstr' ] as $did ) {
 			$o = new cls_entid( $did );
 			$pmid = 'zzz' . md5( $db == 'pdb'
 				? _json_load2([ 'epdb_json', $id ])->citation[0]->title
-				: _json_load2([ 'emdb_old_json', $id ])
-					->deposition->primaryReference->journalArticle->articleTitle
+				: _json_load2([ 'emdb_json', $id ])
+					->crossreferences->primary_citation->journal_citation->title
 			);
 		}
 	}

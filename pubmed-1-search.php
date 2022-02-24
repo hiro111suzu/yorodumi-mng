@@ -31,6 +31,7 @@ $ign_title = array_change_key_case( array_fill_keys([
 	'Cryo-EM structure of a bacterial membrane protein' ,
 	'The structure and biochemical properties of PfAct2' ,
 	'Structure of a protein' ,
+	'Structure of membrane protein with ions' ,
 ], true ));
 
 //. ID一覧取得
@@ -47,7 +48,7 @@ foreach( TSVDATA[ 'emdb' ] as $id => $pmid ) {
 		->crossreferences->primary_citation->journal_citation;
 	$data[ "e$id" ] = [
 		't' => PAP_TITLE[ $id ] ?: $main_json->title ,
-		'a' => _emdb_json3_auth( $main_json->author )
+		'a' => _branch( $main_json, 'author->name' )
 	];
 }
 //_time( 'emdb' );

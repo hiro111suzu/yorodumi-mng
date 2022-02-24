@@ -93,7 +93,7 @@ EOD
 $redo_ids = [];
 foreach ( (array)$argv as $i ) {
 if ( _inlist( $i, 'emdb' ) )
-		$redo_ids[] = $i;
+	$redo_ids[] = $i;
 }
 
 if ( count( $redo_ids ) > 0 )
@@ -106,9 +106,7 @@ foreach( _idlist( 'emdb' ) as $id ) {
 	//- blacklist
 	if ( $blist->inc( $id ) ) continue;
 	$fn_map		= _fn( 'map', $id );
-	$fn_json	= _fn( 'emdb_old_json', $id );
 	$fn_mapinfo = _fn( 'mapinfo', $id );
-	if ( ! file_exists( $fn_json ) ) continue;
 	if ( ! file_exists( $fn_mapinfo ) ) continue;
 
 	chdir( _fn( 'emdb_med', $id ) );
@@ -235,7 +233,8 @@ foreach ( _idlist( 'emdb' ) as $id ) {
 	$dn = _fn( 'mapi', $id );
 	if ( ! is_dir( $dn ) ) continue;
 	chdir( $dn );
-	if ( _newer( 'hists.png', _fn( 'movinfo', $id ) ) )
+	
+	if ( file_exists( 'hists.png' ) && _newer( 'hists.png', _fn( 'movinfo', $id ) ) )
 		continue;
 		
 	_m( "$id: movieinfoが更新されたので、ヒストグラム再作成" );
@@ -243,6 +242,7 @@ foreach ( _idlist( 'emdb' ) as $id ) {
 		_imgres( 'hist.png'   , 'hists.png' );
 		_imgres( 'histlog.png', 'histlogs.png' );
 	}
+//	_pause();
 }
 
 _end();
@@ -301,11 +301,11 @@ function _spiderjob_main( $fn_map, $id, $type ) {
 	//... 軸の長さチェック
 	if ( $x == '' || $y == '' || $z == '' ) {
 		//- 7845と3821はマップから読み取れない
+		$j = null;
 		if ( $type == 'main' )
-			$j = _json_load2([ 'emdb_new_json', $id ])->map->spacing;
+			$j = _json_load2(['emdb_new_json', $id])->map->spacing;
 		if ( _instr( 'half_map', $fn_map ) )
-			$j = _json_load2([ 'emdb_new_json', $id ])
-				->interpretation->half_map_list->spacing;
+			$j = _json_load2(['emdb_new_json', $id])->interpretation->half_map_list->spacing;
 		if ( $j ) {
 			list( $x, $y, $z ) = [ $j->x , $j->y, $j->z ];
 		} else {
@@ -432,7 +432,7 @@ function _spiderjob_main( $fn_map, $id, $type ) {
 	if ( $type == 'main' ) {
 		$surfval = 
 			_json_load([ 'movinfo', $id ])[1][ 'threshold' ]
-			?: _json_load2([ 'emdb_old_json', $id ])->map->contourLevel
+			?: _json_load2([ 'emdb_new_json', $id ])->map->contour[0]->level
 		;
 		if ( $surfval != '' ) {
 			$xd = round( $x / 2 );
@@ -522,34 +522,35 @@ function _plothist( $id = '' ) {
 
 	//... 各レベル
 
-	$x = _json_load2([ 'emdb_old_json', $id ]);
-	$l = $x->map->contourLevel;
-	if ( $x->map->contourLevel_source == 'author' )
-		$th_a = $l;
-	else
-		$th_e = $l;
-	$j = _json_load([ 'movinfo', $id ]);
-	$th_m = $j[1][ 'threshold' ];
+	$contour = _json_load2([ 'emdb_new_json', $id ])->map->contour[0];
+	$lev_xml = $contour->level;
+	$src_xml = $contour->source;
+	$color = strtolower( $src_xml ) == 'author' ? '0000d0' : '00d000';
+	$lev_mov = _json_load([ 'movinfo', $id ])[1][ 'threshold' ];
 
 	//... gnuplot スクリプトに埋め込む文字列
 	$addp = '';
-	if ( $th_m != '' ) {
-		$add .= "const1 = $th_m\n";
-		$addp .= ", const1,t title \"Surface, movie #1 ($th_m)\" lt rgb \"#d00000\" linewidth 3";
+	if ( $lev_mov != '' ) {
+		$add .= "const1 = $lev_mov\n";
+		$addp .= ", const1,t title \"Surface, movie #1 ($lev_mov)\" "
+			. "lt rgb \"#d00000\" linewidth 3"
+		;
 	}
 
-	if ( $th_a != '' ) {
-		$add .= "const2 = $th_a\n";
-		$addp .= ", const2,t title \"Surface, by author ($th_a)\" lt rgb \"#0000d0\" linewidth 3";
-	}
-
-	if ( $th_e != '' ) {
-		$add .= "const3 = $th_e\n";
-		$addp .= ", const3,t title \"Surface, by EMDB ($th_e)\" lt rgb \"#00d000\" linewidth 3";
+	if ( $lev_xml != '' ) {
+		$add .= "const2 = $lev_xml\n";
+		$addp .= ", const2,t title \"Surface, by $src_xml ($lev_xml)\" "
+			. "lt rgb \"#$color\" linewidth 3"
+		;
 	}
 
 	//... 実行
-	_m( "ヒストグラム $id: a: $th_a \t e: $th_e \t m: $th_m" );
+	_m( "ヒストグラム - $id" );
+	_kvtable([
+		'level - xml' => $lev_xml ,
+		'level - xml source' => $src_xml ,
+		'level - mov'  => $lev_mov ,
+	]);
 	_gnuplot( strtr( PLOT2, [ '<add>' => $add, '<plot>' => $addp ] ) );
 	return true;
 }

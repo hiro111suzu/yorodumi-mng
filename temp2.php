@@ -1,5 +1,68 @@
 <?php
 include "commonlib.php";
+//_m( 
+$xml = simplexml_load_string(
+		strtr(
+			file_get_contents(
+				'/data/yorodumi/fdata/emdb-mirror/doc/XML-schemas/emdb-schemas/current/emdb.xsd'
+			) ,
+			[
+				'<xs:' => '<' ,
+				'</xs:' => '</'
+			]
+		)
+	)
+;
+_json_save( DN_REPORT. '/emdb.xsd.json', 
+	$xml
+);
+file_put_contents( DN_REPORT. '/emdb_xsd_json_pretty.txt',
+	_json_pretty( $xml )
+);
+
+
+/*
+$fn_tsv = DN_EDIT. '/pubmed_id.tsv';
+$data = array_merge(
+//	[ 'emdb' => _json_load( 'temp_emdb2pmid.json.gz' ), 'pdb' => '' ] ,
+	_tsv_load2( $fn_tsv ) ,
+	[ 'emdb' => _json_load( 'temp_emdb2pmid.json.gz' ) ]
+
+);
+_tsv_save2( $fn_tsv, $data );
+
+
+
+$dn = DN_PREP . '/pap';
+$_filenames += [
+	'emdb_pap'	=> "$dn/emdb/<id>.json" ,
+];
+$out = [];
+foreach ( _idloop( 'emdb_pap' ) as $fn ) {
+	$id = _fn2id( $fn );
+	$json = _json_load2( $fn );
+	$pmid = $json->pmid;
+	_cnt( 'total' );
+	if ( ! $pmid  ) {
+		_cnt( 'unknown' );
+		continue;
+	}
+	if ( substr( $pmid, 0, 1 ) == '_' ) {
+		_cnt( 'pap_id' );
+		continue;
+	}
+	if ( _json_load2([ 'emdb_add', $id ])->pmid == $pmid ) {
+		_cnt( 'same as xml' );
+		continue;
+	}
+	$out[ $id ] = $pmid;
+	_m( "$id: $pmid" );
+	_cnt( 'original' );
+}
+_json_save( 'temp_emdb2pmid.json.gz', $out );
+_cnt();
+
+/*
 define( 'DN_UNPXML', DN_FDATA . '/unp' );
 $_filenames += [
 	'unp_xml' => DN_FDATA. '/unp/<id>.xml' ,
